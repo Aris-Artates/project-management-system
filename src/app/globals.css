@@ -1,0 +1,118 @@
+@import "tailwindcss";
+
+/* Brand tokens. Original palette: deep pine for primary actions, ember for
+   highlights, warm stone neutrals. Swap these to rebrand. */
+:root {
+  --bg: #f6f5f2;
+  --surface: #ffffff;
+  --surface-2: #efede8;
+  --line: #e2dfd8;
+  --line-strong: #cfcbc2;
+  --fg: #1d1c1a;
+  --muted: #6b675f;
+  --brand: #17594f;
+  --brand-hover: #12473f;
+  --brand-soft: #dcebe6;
+  --on-brand: #ffffff;
+  --ember: #e2603a;
+  --ember-soft: #fbe5dc;
+  --danger: #c2372b;
+  --danger-soft: #f8dedb;
+  --warning: #b7791f;
+  --warning-soft: #f7ead2;
+  --success: #2f7d4a;
+  --success-soft: #dcefe2;
+  --ring: #17594f55;
+  --shadow: 0 1px 2px rgb(29 28 26 / 0.06), 0 1px 1px rgb(29 28 26 / 0.04);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141513;
+    --surface: #1c1d1b;
+    --surface-2: #252623;
+    --line: #2f302d;
+    --line-strong: #3d3e3a;
+    --fg: #ecebe7;
+    --muted: #a09d95;
+    --brand: #4fb3a2;
+    --brand-hover: #67c4b4;
+    --brand-soft: #1e3a35;
+    --on-brand: #0c1f1c;
+    --ember: #f08158;
+    --ember-soft: #3d2419;
+    --danger: #ef6b5e;
+    --danger-soft: #3b1f1c;
+    --warning: #e0a94f;
+    --warning-soft: #3a2e17;
+    --success: #5cbf7e;
+    --success-soft: #1b3324;
+    --ring: #4fb3a266;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.4);
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #141513;
+  --surface: #1c1d1b;
+  --surface-2: #252623;
+  --line: #2f302d;
+  --line-strong: #3d3e3a;
+  --fg: #ecebe7;
+  --muted: #a09d95;
+  --brand: #4fb3a2;
+  --brand-hover: #67c4b4;
+  --brand-soft: #1e3a35;
+  --on-brand: #0c1f1c;
+  --ember: #f08158;
+  --ember-soft: #3d2419;
+  --danger: #ef6b5e;
+  --danger-soft: #3b1f1c;
+  --warning: #e0a94f;
+  --warning-soft: #3a2e17;
+  --success: #5cbf7e;
+  --success-soft: #1b3324;
+  --ring: #4fb3a266;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.4);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-soft: var(--brand-soft);
+  --color-on-brand: var(--on-brand);
+  --color-ember: var(--ember);
+  --color-ember-soft: var(--ember-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --radius-card: 12px;
+  --shadow-card: var(--shadow);
+}
+
+html {
+  color-scheme: light dark;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
