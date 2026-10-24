@@ -1,11 +1,14 @@
 import { getProjectContext, getSupabase, displayName } from "@/lib/session";
-import { getProjectMembers, getProjectWork } from "@/lib/queries";
+import { getCustomFields, getProjectMembers, getProjectWork } from "@/lib/queries";
 import {
   addList,
   addMilestone,
   addProjectMember,
+  addCustomField,
   addStatus,
   addTag,
+  deleteCustomField,
+  saveAsTemplate,
   deleteList,
   deleteMilestone,
   deleteProject,
@@ -26,7 +29,7 @@ export default async function ProjectSettings({ params }: PageProps<"/[org]/proj
   const ctx = await getProjectContext(slug, key);
   const p = ctx.project;
   const supabase = await getSupabase();
-  const [{ statuses, lists, tags, milestones }, members, { data: orgMembers }, { data: roles }] = await Promise.all([
+  const [{ statuses, lists, tags, milestones }, members, { data: orgMembers }, { data: roles }, fields] = await Promise.all([
     getProjectWork(p.id),
     getProjectMembers(p.id, ctx.org.id),
     supabase
@@ -35,6 +38,7 @@ export default async function ProjectSettings({ params }: PageProps<"/[org]/proj
       .eq("org_id", ctx.org.id)
       .eq("status", "active"),
     supabase.from("roles").select("*").eq("org_id", ctx.org.id).is("system_key", null).order("position"),
+    getCustomFields(p.id),
   ]);
 
   const canEdit = ctx.canProject("project.edit");
@@ -284,6 +288,60 @@ export default async function ProjectSettings({ params }: PageProps<"/[org]/proj
             </ActionForm>
           </Card>
         </>
+      )}
+
+      {canEdit && (
+        <Card>
+          <CardHeader title="Custom fields" description="Extra details on every task. Hidden from clients." />
+          <ul className="divide-y divide-line">
+            {fields.map((f) => (
+              <li key={f.id} className="flex items-center gap-2 px-4 py-2">
+                <span className="flex-1 text-sm">{f.name}</span>
+                <Badge>{f.field_type}</Badge>
+                {f.options.length > 0 && <span className="max-w-40 truncate text-xs text-muted">{f.options.join(", ")}</span>}
+                <form action={deleteCustomField}>
+                  {h("org_slug", slug)}
+                  {h("id", f.id)}
+                  <ConfirmButton message={`Delete the ${f.name} field and its values?`} variant="ghost">
+                    Delete
+                  </ConfirmButton>
+                </form>
+              </li>
+            ))}
+          </ul>
+          <ActionForm action={addCustomField} resetOnSuccess showOk={false} className="flex flex-wrap items-center gap-2 border-t border-line p-3">
+            {common}
+            {h("position", String(fields.length))}
+            <Input name="name" placeholder="Field name" required maxLength={40} className="min-w-32 flex-1" />
+            <Select name="field_type" defaultValue="text" className="w-auto">
+              <option value="text">Text</option>
+              <option value="number">Number</option>
+              <option value="date">Date</option>
+              <option value="select">Dropdown</option>
+              <option value="checkbox">Checkbox</option>
+            </Select>
+            <Input name="options" placeholder="Dropdown options, comma separated" className="min-w-48 flex-1" />
+            <SubmitButton size="sm">Add</SubmitButton>
+          </ActionForm>
+        </Card>
+      )}
+
+      {ctx.can("template.manage") && (
+        <Card>
+          <CardHeader title="Save as template" description="Reuse this project's statuses, lists, tags, milestones and tasks." />
+          <ActionForm action={saveAsTemplate} resetOnSuccess className="flex flex-col gap-3 p-4">
+            {common}
+            <Field label="Template name">
+              <Input name="name" defaultValue={`${p.name} template`} required maxLength={80} />
+            </Field>
+            <Field label="Description">
+              <Input name="description" maxLength={200} />
+            </Field>
+            <div>
+              <SubmitButton size="sm">Save template</SubmitButton>
+            </div>
+          </ActionForm>
+        </Card>
       )}
 
       {ctx.canProject("project.delete") && (

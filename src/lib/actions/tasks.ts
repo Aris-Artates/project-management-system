@@ -24,6 +24,7 @@ const taskFields = z.object({
   due_date: date,
   estimate_hours: z.coerce.number().min(0).max(10000).nullable(),
   client_visible: z.boolean(),
+  recurrence: z.enum(["daily", "weekly", "biweekly", "monthly"]).nullable(),
 });
 
 function readTaskFields(form: FormData) {
@@ -38,6 +39,7 @@ function readTaskFields(form: FormData) {
     due_date: optional(form, "due_date"),
     estimate_hours: optional(form, "estimate_hours"),
     client_visible: bool(form, "client_visible"),
+    recurrence: optional(form, "recurrence"),
   });
 }
 
@@ -163,4 +165,45 @@ export async function approveTask(form: FormData) {
   const supabase = await createClient();
   await supabase.rpc("client_approve_task", { _task: str(form, "task_id") });
   refreshOrg(str(form, "org_slug"));
+}
+
+// Gantt: move or resize a bar.
+export async function rescheduleTask(taskId: string, start: string | null, due: string | null, orgSlug: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("tasks").update({ start_date: start, due_date: due }).eq("id", taskId);
+  refreshOrg(orgSlug);
+  return error ? errorMessage(error) : null;
+}
+
+export async function addDependency(_: ActionState, form: FormData): Promise<ActionState> {
+  const supabase = await createClient();
+  const dependsOn = str(form, "depends_on_id");
+  if (!dependsOn) return { error: "Pick a task" };
+  const { error } = await supabase.from("task_dependencies").insert({ task_id: str(form, "task_id"), depends_on_id: dependsOn });
+  if (error) return { error: error.code === "23505" ? "Already linked" : errorMessage(error) };
+  refreshOrg(str(form, "org_slug"));
+  return null;
+}
+
+export async function removeDependency(form: FormData) {
+  const supabase = await createClient();
+  await supabase.from("task_dependencies").delete().eq("task_id", str(form, "task_id")).eq("depends_on_id", str(form, "depends_on_id"));
+  refreshOrg(str(form, "org_slug"));
+}
+
+export async function saveFieldValues(_: ActionState, form: FormData): Promise<ActionState> {
+  const supabase = await createClient();
+  const taskId = str(form, "task_id");
+  const rows = [...form.keys()]
+    .filter((k) => k.startsWith("field:"))
+    .map((k) => ({ task_id: taskId, field_id: k.slice(6), value: str(form, k) || null }));
+  // Unchecked checkboxes are not submitted; record them as false.
+  for (const id of form.getAll("checkbox_fields").map(String)) {
+    if (!rows.some((r) => r.field_id === id)) rows.push({ task_id: taskId, field_id: id, value: "false" });
+  }
+  if (!rows.length) return null;
+  const { error } = await supabase.from("task_field_values").upsert(rows, { onConflict: "task_id,field_id" });
+  if (error) return { error: errorMessage(error) };
+  refreshOrg(str(form, "org_slug"));
+  return { ok: "Saved" };
 }

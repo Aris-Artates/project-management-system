@@ -99,7 +99,72 @@ export type Task = {
   created_at: string;
   updated_at: string;
   completed_at: string | null;
+  recurrence: Recurrence | null;
+  next_task_id: string | null;
 };
+
+export type Recurrence = "daily" | "weekly" | "biweekly" | "monthly";
+
+export type BugStatus = "new" | "open" | "in_progress" | "fixed" | "verified" | "closed" | "reopened";
+export type BugSeverity = "minor" | "major" | "critical" | "blocker";
+
+export type Bug = {
+  id: string;
+  org_id: string;
+  project_id: string;
+  number: number;
+  title: string;
+  description: string | null;
+  steps: string | null;
+  environment: string | null;
+  severity: BugSeverity;
+  reproducibility: "always" | "sometimes" | "rarely" | "unable";
+  status: BugStatus;
+  reporter_id: string | null;
+  assignee_id: string | null;
+  task_id: string | null;
+  milestone_id: string | null;
+  client_visible: boolean;
+  created_at: string;
+  updated_at: string;
+  fixed_at: string | null;
+  closed_at: string | null;
+};
+
+export type TimeEntry = {
+  id: string;
+  project_id: string;
+  task_id: string | null;
+  bug_id: string | null;
+  user_id: string;
+  work_date: string;
+  minutes: number;
+  note: string | null;
+  billable: boolean;
+  status: "draft" | "submitted" | "approved" | "rejected";
+  reviewed_by: string | null;
+  created_at: string;
+};
+
+export type Timer = {
+  user_id: string;
+  project_id: string;
+  task_id: string | null;
+  bug_id: string | null;
+  note: string | null;
+  started_at: string;
+};
+
+export type CustomField = {
+  id: string;
+  project_id: string;
+  name: string;
+  field_type: "text" | "number" | "date" | "select" | "checkbox";
+  options: string[];
+  position: number;
+};
+
+export type ProjectTemplate = { id: string; name: string; description: string | null; created_at: string };
 
 export type Comment = {
   id: string;

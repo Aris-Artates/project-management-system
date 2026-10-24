@@ -1,23 +1,25 @@
 import Link from "next/link";
 import { getProjectContext } from "@/lib/session";
-import { getAttachments, getComments, getProjectWork } from "@/lib/queries";
-import { approveTask } from "@/lib/actions/tasks";
-import { createTask } from "@/lib/actions/tasks";
+import { getAttachments, getBugs, getComments, getProjectWork } from "@/lib/queries";
+import { approveTask, createTask } from "@/lib/actions/tasks";
+import { reportBug } from "@/lib/actions/bugs";
+import { BUG_STATUS, SEVERITY } from "@/lib/bug-meta";
 import { ActionForm, SubmitButton } from "@/components/form";
 import { AttachmentList } from "@/components/attachment-list";
 import { CommentThread } from "@/components/comments";
 import { FileUpload } from "@/components/file-upload";
 import { DueLabel, StatusPill } from "@/components/project-bits";
-import { Badge, Button, Card, CardHeader, Dot, Input, Textarea } from "@/components/ui";
+import { Badge, Button, Card, CardHeader, Dot, Input, Select, Textarea } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
 
 export default async function PortalProject({ params }: PageProps<"/portal/[org]/[key]">) {
   const { org: slug, key } = await params;
   const ctx = await getProjectContext(slug, key);
-  const [{ tasks, statuses, milestones }, files, comments] = await Promise.all([
+  const [{ tasks, statuses, milestones }, files, comments, bugs] = await Promise.all([
     getProjectWork(ctx.project.id),
     getAttachments(ctx.project.id),
     getComments(ctx.project.id, null),
+    getBugs(ctx.project.id),
   ]);
   const top = tasks.filter((t) => !t.parent_id);
   const statusById = new Map(statuses.map((s) => [s.id, s]));
@@ -115,6 +117,45 @@ export default async function PortalProject({ params }: PageProps<"/portal/[org]
           )}
         </Card>
       </div>
+
+      <Card>
+        <CardHeader title="Reported issues" />
+        {bugs.length === 0 ? (
+          <p className="p-4 text-sm text-muted">No issues reported.</p>
+        ) : (
+          <ul className="divide-y divide-line">
+            {bugs.map((b) => (
+              <li key={b.id} className="flex flex-wrap items-center gap-3 px-4 py-2.5">
+                <Link href={`${base}/bugs/${b.number}`} className="min-w-0 flex-1 truncate text-sm hover:text-brand">
+                  {b.title}
+                </Link>
+                <Badge tone={BUG_STATUS[b.status].tone}>{BUG_STATUS[b.status].label}</Badge>
+              </li>
+            ))}
+          </ul>
+        )}
+        {ctx.canProject("bug.create") && (
+          <ActionForm action={reportBug} resetOnSuccess className="flex flex-col gap-2 border-t border-line p-4">
+            <input type="hidden" name="org_slug" value={slug} />
+            <input type="hidden" name="project_id" value={ctx.project.id} />
+            <input type="hidden" name="redirect_base" value={`${base}/bugs`} />
+            <p className="text-sm font-medium">Report an issue</p>
+            <Input name="title" placeholder="What is not working?" required maxLength={300} />
+            <Textarea name="steps" rows={3} placeholder="How can we see it happen?" />
+            <div className="flex flex-wrap gap-2">
+              <Select name="severity" defaultValue="major" className="w-auto">
+                {Object.entries(SEVERITY).map(([k, v]) => (
+                  <option key={k} value={k}>
+                    {v.label}
+                  </option>
+                ))}
+              </Select>
+              <Input name="environment" placeholder="Browser or device" className="min-w-40 flex-1" maxLength={500} />
+              <SubmitButton size="sm">Report</SubmitButton>
+            </div>
+          </ActionForm>
+        )}
+      </Card>
 
       <Card>
         <CardHeader

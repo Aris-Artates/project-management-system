@@ -13,8 +13,11 @@ const transport = process.env.SMTP_HOST
     })
   : null;
 
+// Base URL for links in emails. On Vercel it falls back to the production domain.
 export function appUrl(path = "") {
-  return `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3200"}${path}`;
+  const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  const base = process.env.NEXT_PUBLIC_SITE_URL || (vercel ? `https://${vercel}` : "http://localhost:3200");
+  return `${base.replace(/\/$/, "")}${path}`;
 }
 
 function escape(s: string) {

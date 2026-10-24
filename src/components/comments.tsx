@@ -11,6 +11,7 @@ export function CommentThread({
   orgSlug,
   projectId,
   taskId,
+  bugId,
   meId,
   canComment,
   canDeleteAny,
@@ -21,6 +22,7 @@ export function CommentThread({
   orgSlug: string;
   projectId: string;
   taskId: string | null;
+  bugId?: string;
   meId: string;
   canComment: boolean;
   canDeleteAny: boolean;
@@ -61,6 +63,7 @@ export function CommentThread({
           <input type="hidden" name="org_slug" value={orgSlug} />
           <input type="hidden" name="project_id" value={projectId} />
           {taskId && <input type="hidden" name="task_id" value={taskId} />}
+          {bugId && <input type="hidden" name="bug_id" value={bugId} />}
           <Textarea name="body" rows={3} placeholder={isClient ? "Write a message" : "Write a comment. Use @name to mention someone."} required />
           <div className="flex items-center gap-3">
             {allowInternal && !isClient && (

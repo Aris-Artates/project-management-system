@@ -36,6 +36,8 @@ export default async function OrgLayout({ children, params }: LayoutProps<"/[org
   const nav = [
     { href: `/${slug}`, label: "My work", icon: "home" as const, exact: true },
     { href: `/${slug}/projects`, label: "Projects", icon: "folder" as const },
+    { href: `/${slug}/timesheet`, label: "Timesheet", icon: "clock" as const },
+    { href: `/${slug}/workload`, label: "Workload", icon: "chart" as const },
     { href: `/${slug}/members`, label: "Members", icon: "users" as const },
     ...(ctx.can("role.manage") ? [{ href: `/${slug}/roles`, label: "Roles and access", icon: "shield" as const }] : []),
     ...(ctx.can("org.settings") ? [{ href: `/${slug}/settings`, label: "Settings", icon: "settings" as const }] : []),

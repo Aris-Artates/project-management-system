@@ -167,4 +167,44 @@ begin
 end;
 $$;
 
+-- Phase 2 demo: permissions for the sample roles, bugs, time and dependencies.
+update public.roles set permissions = permissions || '{bug.create,bug.edit,bug.assign,bug.verify,bug.delete,time.log,time.view_all,timesheet.approve,template.manage}'
+where name = 'Project Manager' and org_id = '00000000-0000-4000-b000-000000000001';
+update public.roles set permissions = permissions || '{bug.create,time.log}'
+where name = 'Developer' and org_id = '00000000-0000-4000-b000-000000000001';
+update public.roles set permissions = permissions || '{bug.create,bug.edit,bug.assign,bug.verify,time.log}'
+where name = 'QA' and org_id = '00000000-0000-4000-b000-000000000001';
+update public.roles set permissions = permissions || '{bug.create}'
+where system_key = 'client' and org_id = '00000000-0000-4000-b000-000000000001';
+
+do $$
+declare
+  web uuid := (select id from public.projects where key = 'WEB' and org_id = '00000000-0000-4000-b000-000000000001');
+  hero uuid := (select id from public.tasks where project_id = web and title = 'Build hero section');
+  wire uuid := (select id from public.tasks where project_id = web and title = 'Homepage wireframes');
+  analytics uuid := (select id from public.tasks where project_id = web and title = 'Set up analytics events');
+begin
+  insert into public.task_dependencies (task_id, depends_on_id) values (hero, wire), (analytics, hero) on conflict do nothing;
+  update public.tasks set start_date = current_date - 10 where id = wire;
+  update public.tasks set start_date = current_date - 2 where id = hero;
+  update public.tasks set start_date = current_date + 3 where id = analytics;
+
+  insert into public.bugs (project_id, title, steps, environment, severity, reproducibility, reporter_id, assignee_id, task_id, client_visible)
+  values
+    (web, 'Hero image overlaps the menu on small phones', E'1. Open the homepage on a 375px wide screen\n2. Open the menu', 'Safari, iPhone SE', 'major', 'always',
+      '00000000-0000-4000-a000-000000000014', '00000000-0000-4000-a000-000000000013', hero, true),
+    (web, 'Contact form shows no error for an invalid email', E'1. Type "abc" in the email field\n2. Submit', 'Chrome 140, Windows', 'minor', 'always',
+      '00000000-0000-4000-a000-000000000014', null, null, false);
+
+  insert into public.time_entries (project_id, task_id, user_id, work_date, minutes, note) values
+    (web, wire, '00000000-0000-4000-a000-000000000012', current_date - 4, 180, 'Wireframes, desktop'),
+    (web, wire, '00000000-0000-4000-a000-000000000012', current_date - 3, 120, 'Wireframes, mobile'),
+    (web, hero, '00000000-0000-4000-a000-000000000013', current_date - 1, 150, 'Hero layout'),
+    (web, hero, '00000000-0000-4000-a000-000000000013', current_date, 90, 'Hero illustration slot');
+  update public.tasks set estimate_hours = 6 where id = wire;
+  update public.tasks set estimate_hours = 8 where id = hero;
+  update public.tasks set estimate_hours = 4 where id = analytics;
+end;
+$$;
+
 select set_config('app.creating_org', 'off', false);

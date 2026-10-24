@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-import { Folder, Home, Settings, Shield, Users, type LucideIcon } from "lucide-react";
+import { ChartBar, Clock, Folder, Home, Settings, Shield, Users, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const ICONS = { home: Home, folder: Folder, users: Users, shield: Shield, settings: Settings } satisfies Record<
+const ICONS = { home: Home, folder: Folder, clock: Clock, chart: ChartBar, users: Users, shield: Shield, settings: Settings } satisfies Record<
   string,
   LucideIcon
 >;

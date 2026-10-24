@@ -1,6 +1,6 @@
 import "server-only";
 import { getSupabase } from "./session";
-import type { Milestone, PersonLite, Role, Tag, Task, TaskList, TaskStatus } from "./types";
+import type { Bug, CustomField, Milestone, PersonLite, Role, Tag, Task, TaskList, TaskStatus, TimeEntry, Timer } from "./types";
 
 export type TaskRow = Task & {
   assignees: { user_id: string; profile: PersonLite }[];
@@ -97,7 +97,7 @@ export async function getComments(projectId: string, taskId: string | null) {
     .select("id, body, is_internal, created_at, edited_at, author_id, author:profiles!comments_author_id_fkey(id, full_name, email, avatar_url)")
     .eq("project_id", projectId)
     .order("created_at");
-  query = taskId ? query.eq("task_id", taskId) : query.is("task_id", null);
+  query = taskId ? query.eq("task_id", taskId) : query.is("task_id", null).is("bug_id", null);
   const { data } = await query;
   return (data ?? []) as unknown as CommentRow[];
 }
@@ -145,4 +145,97 @@ export async function getActivity(projectId: string, limit = 20) {
     .order("created_at", { ascending: false })
     .limit(limit);
   return (data ?? []) as unknown as ActivityRow[];
+}
+
+// --- Phase 2 ------------------------------------------------------------------
+
+export type BugRow = Bug & {
+  assignee: PersonLite | null;
+  reporter: PersonLite | null;
+  task: { number: number; title: string } | null;
+};
+
+const BUG_SELECT =
+  "*, assignee:profiles!bugs_assignee_id_fkey(id, full_name, email, avatar_url), reporter:profiles!bugs_reporter_id_fkey(id, full_name, email, avatar_url), task:tasks!bugs_task_id_fkey(number, title)";
+
+export async function getBugs(projectId: string) {
+  const supabase = await getSupabase();
+  const { data } = await supabase.from("bugs").select(BUG_SELECT).eq("project_id", projectId).order("number", { ascending: false });
+  return (data ?? []) as unknown as BugRow[];
+}
+
+export async function getBug(projectId: string, number: number) {
+  const supabase = await getSupabase();
+  const { data } = await supabase.from("bugs").select(BUG_SELECT).eq("project_id", projectId).eq("number", number).maybeSingle();
+  return data as unknown as BugRow | null;
+}
+
+export async function getBugComments(projectId: string, bugId: string) {
+  const supabase = await getSupabase();
+  const { data } = await supabase
+    .from("comments")
+    .select("id, body, is_internal, created_at, edited_at, author_id, author:profiles!comments_author_id_fkey(id, full_name, email, avatar_url)")
+    .eq("project_id", projectId)
+    .eq("bug_id", bugId)
+    .order("created_at");
+  return (data ?? []) as unknown as CommentRow[];
+}
+
+export type TimeRow = TimeEntry & {
+  person: PersonLite | null;
+  task: { number: number; title: string } | null;
+  bug: { number: number; title: string } | null;
+  project: { key: string; name: string; color: string } | null;
+};
+
+const TIME_SELECT =
+  "*, person:profiles!time_entries_user_id_fkey(id, full_name, email, avatar_url), task:tasks!time_entries_task_id_fkey(number, title), bug:bugs!time_entries_bug_id_fkey(number, title), project:projects!time_entries_project_id_fkey(key, name, color)";
+
+export async function getTimeEntries(filter: { projectId?: string; taskId?: string; bugId?: string; userId?: string; orgId?: string; from?: string; to?: string; status?: string }) {
+  const supabase = await getSupabase();
+  let q = supabase.from("time_entries").select(TIME_SELECT).order("work_date", { ascending: false }).order("created_at", { ascending: false });
+  if (filter.projectId) q = q.eq("project_id", filter.projectId);
+  if (filter.orgId) q = q.eq("org_id", filter.orgId);
+  if (filter.taskId) q = q.eq("task_id", filter.taskId);
+  if (filter.bugId) q = q.eq("bug_id", filter.bugId);
+  if (filter.userId) q = q.eq("user_id", filter.userId);
+  if (filter.from) q = q.gte("work_date", filter.from);
+  if (filter.to) q = q.lte("work_date", filter.to);
+  if (filter.status) q = q.eq("status", filter.status);
+  const { data } = await q.limit(500);
+  return (data ?? []) as unknown as TimeRow[];
+}
+
+export async function getMyTimer(userId: string) {
+  const supabase = await getSupabase();
+  const { data } = await supabase
+    .from("timers")
+    .select("*, task:tasks(number, title), bug:bugs(number, title), project:projects(key, name, org:organizations(slug))")
+    .eq("user_id", userId)
+    .maybeSingle();
+  return data as unknown as
+    | (Timer & {
+        task: { number: number; title: string } | null;
+        bug: { number: number; title: string } | null;
+        project: { key: string; name: string; org: { slug: string } };
+      })
+    | null;
+}
+
+export async function getDependencies(projectId: string) {
+  const supabase = await getSupabase();
+  const { data } = await supabase.from("task_dependencies").select("task_id, depends_on_id").eq("project_id", projectId);
+  return (data ?? []) as { task_id: string; depends_on_id: string }[];
+}
+
+export async function getCustomFields(projectId: string) {
+  const supabase = await getSupabase();
+  const { data } = await supabase.from("custom_fields").select("*").eq("project_id", projectId).order("position").order("name");
+  return (data ?? []) as CustomField[];
+}
+
+export async function getFieldValues(taskId: string) {
+  const supabase = await getSupabase();
+  const { data } = await supabase.from("task_field_values").select("field_id, value").eq("task_id", taskId);
+  return new Map((data ?? []).map((v) => [v.field_id as string, v.value as string | null]));
 }

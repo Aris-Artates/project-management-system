@@ -188,3 +188,77 @@ export async function deleteTag(form: FormData) {
   await supabase.from("tags").delete().eq("id", str(form, "id"));
   refreshOrg(str(form, "org_slug"));
 }
+
+// --- Custom fields and templates -------------------------------------------
+
+const FIELD_TYPES = ["text", "number", "date", "select", "checkbox"] as const;
+
+export async function addCustomField(_: ActionState, form: FormData): Promise<ActionState> {
+  const name = z.string().trim().min(1).max(40).safeParse(str(form, "name"));
+  const type = z.enum(FIELD_TYPES).safeParse(str(form, "field_type"));
+  if (!name.success) return { error: "Name the field" };
+  if (!type.success) return { error: "Pick a field type" };
+  const options = str(form, "options")
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean);
+  if (type.data === "select" && options.length < 2) return { error: "List at least two options, separated by commas" };
+  const supabase = await createClient();
+  const { error } = await supabase.from("custom_fields").insert({
+    project_id: str(form, "project_id"),
+    name: name.data,
+    field_type: type.data,
+    options: type.data === "select" ? options : [],
+    position: Number(str(form, "position") || 0),
+  });
+  if (error) return { error: error.code === "23505" ? "A field with that name exists" : errorMessage(error) };
+  refreshOrg(str(form, "org_slug"));
+  return { ok: "Field added" };
+}
+
+export async function deleteCustomField(form: FormData) {
+  const supabase = await createClient();
+  await supabase.from("custom_fields").delete().eq("id", str(form, "id"));
+  refreshOrg(str(form, "org_slug"));
+}
+
+export async function saveAsTemplate(_: ActionState, form: FormData): Promise<ActionState> {
+  const name = z.string().trim().min(1).max(80).safeParse(str(form, "name"));
+  if (!name.success) return { error: "Name the template" };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("save_project_as_template", {
+    _project: str(form, "project_id"),
+    _name: name.data,
+    _description: str(form, "description"),
+  });
+  if (error) return { error: error.code === "23505" ? "A template with that name exists" : errorMessage(error) };
+  refreshOrg(str(form, "org_slug"));
+  return { ok: `Saved template "${name.data}"` };
+}
+
+export async function deleteTemplate(form: FormData) {
+  const supabase = await createClient();
+  await supabase.from("project_templates").delete().eq("id", str(form, "id"));
+  refreshOrg(str(form, "org_slug"));
+}
+
+export async function createProjectFromTemplate(_: ActionState, form: FormData): Promise<ActionState> {
+  const parsed = projectSchema.pick({ name: true, key: true, color: true }).safeParse({
+    name: str(form, "name"),
+    key: str(form, "key"),
+    color: str(form, "color") || undefined,
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]!.message };
+  const supabase = await createClient();
+  const slug = str(form, "org_slug");
+  const { data: key, error } = await supabase.rpc("create_project_from_template", {
+    _template: str(form, "template_id"),
+    _name: parsed.data.name,
+    _key: parsed.data.key,
+    _start: optional(form, "start_date"),
+    _color: parsed.data.color,
+  });
+  if (error) return { error: error.code === "23505" ? "That project key is already used" : errorMessage(error) };
+  refreshOrg(slug);
+  redirect(`/${slug}/projects/${key}`);
+}

@@ -8,7 +8,7 @@ import { PROJECT_STATUS } from "@/components/project-bits";
 export async function generateMetadata({ params }: { params: Promise<{ org: string; key: string }> }): Promise<Metadata> {
   const { org, key } = await params;
   const ctx = await getProjectContext(org, key);
-  return { title: ctx.project.name };
+  return { title: { default: ctx.project.name, template: `%s · ${ctx.project.name}` } };
 }
 
 export default async function ProjectLayout({ children, params }: LayoutProps<"/[org]/projects/[key]">) {
@@ -22,6 +22,9 @@ export default async function ProjectLayout({ children, params }: LayoutProps<"/
     { href: `${base}/tasks`, label: "Tasks" },
     { href: `${base}/board`, label: "Board" },
     { href: `${base}/calendar`, label: "Calendar" },
+    { href: `${base}/gantt`, label: "Gantt" },
+    { href: `${base}/bugs`, label: "Bugs" },
+    { href: `${base}/time`, label: "Time" },
     { href: `${base}/files`, label: "Files" },
     { href: `${base}/discussion`, label: "Discussion" },
     ...(ctx.canProject("project.edit") || ctx.canProject("project.manage_members") || ctx.canProject("milestone.manage")

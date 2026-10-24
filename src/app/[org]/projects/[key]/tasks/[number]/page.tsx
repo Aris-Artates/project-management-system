@@ -2,10 +2,35 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getProjectContext, displayName } from "@/lib/session";
-import { getAttachments, getComments, getProjectMembers, getProjectWork, getSubtasks, getTask, getTaskSummary } from "@/lib/queries";
-import { addAssignee, deleteTask, patchTask, removeAssignee, toggleTag, toggleTaskDone, updateTask } from "@/lib/actions/tasks";
+import {
+  getAttachments,
+  getComments,
+  getCustomFields,
+  getDependencies,
+  getFieldValues,
+  getMyTimer,
+  getProjectMembers,
+  getProjectWork,
+  getSubtasks,
+  getTask,
+  getTaskSummary,
+  getTimeEntries,
+} from "@/lib/queries";
+import {
+  addAssignee,
+  addDependency,
+  deleteTask,
+  patchTask,
+  removeAssignee,
+  removeDependency,
+  toggleTag,
+  toggleTaskDone,
+  updateTask,
+} from "@/lib/actions/tasks";
+import { TimeLog } from "@/components/time-log";
+import { CustomFieldsForm } from "@/components/custom-fields-form";
 import { ActionForm, AutoSubmitSelect, ConfirmButton, SubmitButton } from "@/components/form";
-import { Avatar, Badge, Card, CardHeader, Field, Input, Select, Textarea } from "@/components/ui";
+import { Avatar, Badge, Card, CardHeader, Field, Input, Notice, Select, Textarea } from "@/components/ui";
 import { CommentThread } from "@/components/comments";
 import { AttachmentList } from "@/components/attachment-list";
 import { FileUpload } from "@/components/file-upload";
@@ -34,14 +59,24 @@ export default async function TaskPage({ params }: PageProps<"/[org]/projects/[k
   if (!task) notFound();
 
   const base = `/${slug}/projects/${ctx.project.key}`;
-  const [{ statuses, lists, tags, milestones }, members, subtasks, comments, files, parent] = await Promise.all([
+  const [{ statuses, lists, tags, milestones, tasks: allTasks }, members, subtasks, comments, files, parent, deps, fields, values, entries, timer] =
+    await Promise.all([
     getProjectWork(ctx.project.id),
     getProjectMembers(ctx.project.id, ctx.org.id),
     getSubtasks(task.id),
     getComments(ctx.project.id, task.id),
     getAttachments(ctx.project.id, task.id),
     task.parent_id ? getTaskSummary(task.parent_id) : Promise.resolve(null),
+    getDependencies(ctx.project.id),
+    getCustomFields(ctx.project.id),
+    getFieldValues(task.id),
+    getTimeEntries({ taskId: task.id }),
+    getMyTimer(ctx.profile.id),
   ]);
+  const byId = new Map(allTasks.map((t) => [t.id, t]));
+  const blockedBy = deps.filter((d) => d.task_id === task.id).flatMap((d) => byId.get(d.depends_on_id) ?? []);
+  const blocking = deps.filter((d) => d.depends_on_id === task.id).flatMap((d) => byId.get(d.task_id) ?? []);
+  const openBlockers = blockedBy.filter((t) => !t.completed_at);
 
   const mine = task.created_by === ctx.profile.id || task.assignees.some((a) => a.user_id === ctx.profile.id);
   const canEdit = ctx.canProject("task.edit") || (ctx.canProject("task.edit_own") && mine);
@@ -93,6 +128,12 @@ export default async function TaskPage({ params }: PageProps<"/[org]/projects/[k
             <h1 className={cn("text-2xl font-semibold tracking-tight", task.completed_at && "text-muted line-through")}>{task.title}</h1>
           </div>
         </div>
+
+        {openBlockers.length > 0 && !task.completed_at && (
+          <Notice tone="warning">
+            Waiting on {openBlockers.map((t) => ctx.project.key + "-" + t.number).join(", ")} before this can start.
+          </Notice>
+        )}
 
         {canEdit ? (
           <Card>
@@ -152,6 +193,15 @@ export default async function TaskPage({ params }: PageProps<"/[org]/projects/[k
               </Field>
               <Field label="Estimate (hours)">
                 <Input name="estimate_hours" type="number" min={0} step={0.25} defaultValue={task.estimate_hours ?? ""} />
+              </Field>
+              <Field label="Repeat" hint="A new copy is created when this one is completed">
+                <Select name="recurrence" defaultValue={task.recurrence ?? ""}>
+                  <option value="">Does not repeat</option>
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="biweekly">Every 2 weeks</option>
+                  <option value="monthly">Monthly</option>
+                </Select>
               </Field>
               <label className="flex items-center gap-2 self-end pb-2 text-sm">
                 <input type="checkbox" name="client_visible" defaultChecked={task.client_visible} className="accent-[var(--brand)]" />
@@ -222,6 +272,86 @@ export default async function TaskPage({ params }: PageProps<"/[org]/projects/[k
             )}
           </Card>
         )}
+
+        <Card>
+          <CardHeader title="Dependencies" description="This task starts after the tasks it waits on are done." />
+          <div className="flex flex-col gap-3 p-4 text-sm">
+            <div>
+              <p className="mb-1 text-xs font-medium text-muted">Waits on</p>
+              {blockedBy.length === 0 && <p className="text-muted">Nothing.</p>}
+              {blockedBy.map((t) => (
+                <div key={t.id} className="flex items-center gap-2 py-0.5">
+                  <TaskRef projectKey={ctx.project.key} number={t.number} href={base + "/tasks/" + t.number} />
+                  <span className={cn("min-w-0 flex-1 truncate", t.completed_at && "text-muted line-through")}>{t.title}</span>
+                  {canEdit && (
+                    <form action={removeDependency}>
+                      {hidden("task_id", task.id)}
+                      {hidden("depends_on_id", t.id)}
+                      {hidden("org_slug", slug)}
+                      <button className="text-xs text-muted hover:text-danger">Remove</button>
+                    </form>
+                  )}
+                </div>
+              ))}
+            </div>
+            {blocking.length > 0 && (
+              <div>
+                <p className="mb-1 text-xs font-medium text-muted">Blocks</p>
+                {blocking.map((t) => (
+                  <div key={t.id} className="flex items-center gap-2 py-0.5">
+                    <TaskRef projectKey={ctx.project.key} number={t.number} href={base + "/tasks/" + t.number} />
+                    <span className="min-w-0 flex-1 truncate">{t.title}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {canEdit && (
+              <ActionForm action={addDependency} showOk={false} className="flex gap-2">
+                {hidden("task_id", task.id)}
+                {hidden("org_slug", slug)}
+                <Select name="depends_on_id" defaultValue="" className="h-9">
+                  <option value="">Add a task this one waits on...</option>
+                  {allTasks
+                    .filter((t) => t.id !== task.id && !blockedBy.some((b) => b.id === t.id))
+                    .map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {ctx.project.key}-{t.number} {t.title}
+                      </option>
+                    ))}
+                </Select>
+                <SubmitButton size="sm" variant="secondary">
+                  Add
+                </SubmitButton>
+              </ActionForm>
+            )}
+          </div>
+        </Card>
+
+        {fields.length > 0 && (
+          <Card>
+            <CardHeader title="Custom fields" />
+            <div className="p-4">
+              <CustomFieldsForm fields={fields} values={Object.fromEntries(values)} taskId={task.id} orgSlug={slug} canEdit={canEdit} />
+            </div>
+          </Card>
+        )}
+
+        <Card>
+          <CardHeader title="Time" />
+          <div className="p-4">
+            <TimeLog
+              orgSlug={slug}
+              projectId={ctx.project.id}
+              taskId={task.id}
+              entries={entries}
+              meId={ctx.profile.id}
+              canLog={ctx.canProject("time.log")}
+              timerStartedAt={timer?.started_at ?? null}
+              timerHere={timer?.task_id === task.id}
+              estimateHours={task.estimate_hours}
+            />
+          </div>
+        </Card>
 
         <Card>
           <CardHeader title={`Files (${files.length})`} />

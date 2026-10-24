@@ -21,6 +21,15 @@ export const PERMISSIONS = [
   "comment.delete_any",
   "file.upload",
   "file.delete_any",
+  "template.manage",
+  "bug.create",
+  "bug.edit",
+  "bug.assign",
+  "bug.verify",
+  "bug.delete",
+  "time.log",
+  "time.view_all",
+  "timesheet.approve",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
