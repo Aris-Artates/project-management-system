@@ -51,6 +51,12 @@ export function Board({
   movable: string[];
 }) {
   const [tasks, setTasks] = useState(initialTasks);
+  // Take fresh server data after a refresh (new tasks, other people's moves).
+  const [seen, setSeen] = useState(initialTasks);
+  if (seen !== initialTasks) {
+    setSeen(initialTasks);
+    setTasks(initialTasks);
+  }
   const [activeId, setActiveId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [, startTransition] = useTransition();

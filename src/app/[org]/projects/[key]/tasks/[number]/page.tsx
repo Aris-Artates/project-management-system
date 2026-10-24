@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getProjectContext, displayName } from "@/lib/session";
 import { getAttachments, getComments, getProjectMembers, getProjectWork, getSubtasks, getTask, getTaskSummary } from "@/lib/queries";
@@ -12,6 +13,17 @@ import { NewTaskForm } from "@/components/new-task-form";
 import { DueLabel, PriorityLabel, StatusPill, TaskRef } from "@/components/project-bits";
 import { EyeIcon } from "@/components/icons";
 import { cn, formatDate, PRIORITIES } from "@/lib/utils";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ org: string; key: string; number: string }>;
+}): Promise<Metadata> {
+  const { org, key, number } = await params;
+  const ctx = await getProjectContext(org, key);
+  const task = Number.isInteger(Number(number)) ? await getTask(ctx.project.id, Number(number)) : null;
+  return { title: task ? `${ctx.project.key}-${task.number} ${task.title}` : ctx.project.name };
+}
 
 export default async function TaskPage({ params }: PageProps<"/[org]/projects/[key]/tasks/[number]">) {
   const { org: slug, key, number } = await params;
@@ -106,8 +118,8 @@ export default async function TaskPage({ params }: PageProps<"/[org]/projects/[k
               <Field label="Priority">
                 <Select name="priority" defaultValue={task.priority}>
                   {PRIORITIES.map((p) => (
-                    <option key={p} value={p} className="capitalize">
-                      {p === "none" ? "No priority" : p}
+                    <option key={p} value={p}>
+                      {p === "none" ? "No priority" : p[0]!.toUpperCase() + p.slice(1)}
                     </option>
                   ))}
                 </Select>

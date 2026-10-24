@@ -1,8 +1,15 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { getProjectContext } from "@/lib/session";
 import { TabLink } from "@/components/nav-link";
 import { Badge, Dot } from "@/components/ui";
 import { PROJECT_STATUS } from "@/components/project-bits";
+
+export async function generateMetadata({ params }: { params: Promise<{ org: string; key: string }> }): Promise<Metadata> {
+  const { org, key } = await params;
+  const ctx = await getProjectContext(org, key);
+  return { title: ctx.project.name };
+}
 
 export default async function ProjectLayout({ children, params }: LayoutProps<"/[org]/projects/[key]">) {
   const { org: slug, key } = await params;
@@ -35,7 +42,9 @@ export default async function ProjectLayout({ children, params }: LayoutProps<"/
         <Dot color={ctx.project.color} className="size-3" />
         <h1 className="text-2xl font-semibold tracking-tight">{ctx.project.name}</h1>
         <Badge tone={status.tone}>{status.label}</Badge>
-        {!ctx.isMember && <Badge>Viewing as {ctx.isPlatformAdmin ? "platform admin" : "org-wide viewer"}</Badge>}
+        {!ctx.isMember && (
+          <Badge>Viewing as {ctx.isPlatformAdmin ? "platform admin" : ctx.isOrgAdmin ? "Org Admin" : "org-wide viewer"}</Badge>
+        )}
       </div>
       <nav className="mt-4 mb-6 flex gap-1 overflow-x-auto border-b border-line">
         {tabs.map((t) => (
