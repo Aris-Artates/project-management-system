@@ -116,3 +116,56 @@ body {
   outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
+
+/* Rendered page text (wiki pages, topic bodies). */
+.prose-app {
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.prose-app > * + * { margin-top: 0.75em; }
+.prose-app h1 { font-size: 1.5rem; font-weight: 600; margin-top: 1.2em; }
+.prose-app h2 { font-size: 1.25rem; font-weight: 600; margin-top: 1.2em; }
+.prose-app h3 { font-size: 1.05rem; font-weight: 600; margin-top: 1em; }
+.prose-app ul { list-style: disc; padding-left: 1.4em; }
+.prose-app ol { list-style: decimal; padding-left: 1.4em; }
+.prose-app li + li { margin-top: 0.25em; }
+.prose-app a { color: var(--brand); text-decoration: underline; text-underline-offset: 2px; }
+.prose-app code { font-family: var(--font-geist-mono), monospace; font-size: 0.85em; background: var(--surface-2); padding: 0.1em 0.35em; border-radius: 4px; }
+.prose-app pre { background: var(--surface-2); padding: 0.85em 1em; border-radius: 8px; overflow-x: auto; }
+.prose-app pre code { background: none; padding: 0; }
+.prose-app blockquote { border-left: 3px solid var(--line-strong); padding-left: 0.9em; color: var(--muted); }
+.prose-app table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.prose-app th, .prose-app td { border: 1px solid var(--line); padding: 0.4em 0.6em; text-align: left; }
+.prose-app hr { border-color: var(--line); }
+.prose-app input[type="checkbox"] { margin-right: 0.4em; accent-color: var(--brand); }
+
+/* Chart tokens: validated categorical order (slots 1-4) plus chart chrome. */
+:root {
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --chart-grid: #ebe9e4;
+  --chart-axis: #c3c2b7;
+  --status-good: #0ca30c;
+  --status-critical: #d03b3b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --chart-grid: #2c2c2a;
+    --chart-axis: #383835;
+  }
+}
+:root[data-theme="dark"] {
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --chart-grid: #2c2c2a;
+  --chart-axis: #383835;
+}

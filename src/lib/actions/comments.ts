@@ -43,6 +43,7 @@ export async function addComment(_: ActionState, form: FormData): Promise<Action
     project_id: projectId,
     task_id: taskId,
     bug_id: optional(form, "bug_id"),
+    topic_id: optional(form, "topic_id"),
     body,
     is_internal: bool(form, "is_internal"),
     mentions,
@@ -51,7 +52,14 @@ export async function addComment(_: ActionState, form: FormData): Promise<Action
 
   const { data: me } = await supabase.auth.getUser();
   const bugId = optional(form, "bug_id");
-  const link = taskId ? (await supabase.rpc("task_link", { _task: taskId })).data : bugId ? `/go/bug/${bugId}` : null;
+  const topicId = optional(form, "topic_id");
+  const link = taskId
+    ? (await supabase.rpc("task_link", { _task: taskId })).data
+    : bugId
+      ? `/go/bug/${bugId}`
+      : topicId
+        ? `/go/topic/${topicId}`
+        : null;
   for (const p of people.filter((p) => mentions.includes(p.id) && p.id !== me.user?.id)) {
     await sendNotificationEmail(p.email, "You were mentioned in a comment", body.slice(0, 280), link);
   }

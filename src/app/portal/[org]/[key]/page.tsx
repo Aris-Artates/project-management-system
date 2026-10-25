@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { getProjectContext } from "@/lib/session";
-import { getAttachments, getBugs, getComments, getProjectWork } from "@/lib/queries";
+import { getAttachments, getBugs, getComments, getDocs, getEvents, getProjectWork, getTopics } from "@/lib/queries";
+import { createTopic } from "@/lib/actions/forum";
+import { LocalTime } from "@/components/local-time";
 import { approveTask, createTask } from "@/lib/actions/tasks";
 import { reportBug } from "@/lib/actions/bugs";
 import { BUG_STATUS, SEVERITY } from "@/lib/bug-meta";
@@ -10,16 +12,19 @@ import { CommentThread } from "@/components/comments";
 import { FileUpload } from "@/components/file-upload";
 import { DueLabel, StatusPill } from "@/components/project-bits";
 import { Badge, Button, Card, CardHeader, Dot, Input, Select, Textarea } from "@/components/ui";
-import { formatDate } from "@/lib/utils";
+import { formatDate, isoInDays } from "@/lib/utils";
 
 export default async function PortalProject({ params }: PageProps<"/portal/[org]/[key]">) {
   const { org: slug, key } = await params;
   const ctx = await getProjectContext(slug, key);
-  const [{ tasks, statuses, milestones }, files, comments, bugs] = await Promise.all([
+  const [{ tasks, statuses, milestones }, files, comments, bugs, docs, topics, events] = await Promise.all([
     getProjectWork(ctx.project.id),
     getAttachments(ctx.project.id),
     getComments(ctx.project.id, null),
     getBugs(ctx.project.id),
+    getDocs(ctx.project.id),
+    getTopics(ctx.project.id),
+    getEvents({ projectId: ctx.project.id, from: isoInDays(0), to: isoInDays(60) }),
   ]);
   const top = tasks.filter((t) => !t.parent_id);
   const statusById = new Map(statuses.map((s) => [s.id, s]));
@@ -111,6 +116,74 @@ export default async function PortalProject({ params }: PageProps<"/portal/[org]
                 <li key={m.id} className="flex items-center justify-between gap-2 px-4 py-2.5 text-sm">
                   <span>{m.name}</span>
                   {m.status === "done" ? <Badge tone="success">Done</Badge> : <DueLabel due={m.due_date} done={false} />}
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-3">
+        <Card>
+          <CardHeader title="Pages" />
+          {docs.length === 0 ? (
+            <p className="p-4 text-sm text-muted">Nothing shared yet.</p>
+          ) : (
+            <ul className="divide-y divide-line">
+              {docs.map((d) => (
+                <li key={d.id}>
+                  <Link href={`${base}/docs/${d.id}`} className="block truncate px-4 py-2.5 text-sm hover:text-brand">
+                    {d.title}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+        <Card>
+          <CardHeader title="Discussions" />
+          {topics.length === 0 ? (
+            <p className="p-4 text-sm text-muted">No discussions yet.</p>
+          ) : (
+            <ul className="divide-y divide-line">
+              {topics.map((t) => (
+                <li key={t.id}>
+                  <Link href={`${base}/discussion/${t.id}`} className="block px-4 py-2.5 text-sm hover:text-brand">
+                    <span className="block truncate">{t.title}</span>
+                    <span className="text-xs text-muted">
+                      {t.reply_count} repl{t.reply_count === 1 ? "y" : "ies"}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+          {ctx.canProject("forum.post") && (
+            <ActionForm action={createTopic} resetOnSuccess className="flex flex-col gap-2 border-t border-line p-3">
+              <input type="hidden" name="org_slug" value={slug} />
+              <input type="hidden" name="project_id" value={ctx.project.id} />
+              <input type="hidden" name="base" value={`${base}/discussion`} />
+              <Input name="title" placeholder="Start a discussion" required maxLength={200} className="h-9" />
+              <Textarea name="body" rows={2} placeholder="Message (optional)" className="min-h-0" />
+              <div>
+                <SubmitButton size="sm">Post</SubmitButton>
+              </div>
+            </ActionForm>
+          )}
+        </Card>
+        <Card>
+          <CardHeader title="Upcoming meetings" />
+          {events.length === 0 ? (
+            <p className="p-4 text-sm text-muted">Nothing scheduled.</p>
+          ) : (
+            <ul className="divide-y divide-line">
+              {events.map((e) => (
+                <li key={e.id} className="px-4 py-2.5 text-sm">
+                  <span className="block font-medium">{e.title}</span>
+                  <span className="text-xs text-muted">
+                    <LocalTime iso={e.starts_at} mode={e.all_day ? "date" : "datetime"} />
+                    {e.location ? ` · ${e.location}` : ""}
+                  </span>
                 </li>
               ))}
             </ul>

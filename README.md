@@ -57,5 +57,5 @@ Emails (invitations, assignments, mentions) are sent through SMTP when `SMTP_HOS
 
 - Phase 1 (done): organizations, invitations, role builder, projects, tasks and subtasks, list, board and calendar views, comments with mentions, files, notifications, client portal, search, platform admin
 - Phase 2 (done): Gantt with dependencies and drag to reschedule, bug tracker with a verify and close workflow, time tracking with timers, weekly timesheets and approvals, project templates, custom fields, recurring tasks, workload view
-- Phase 3: wiki pages, forums and chat, events, reports and dashboards
+- Phase 3 (done): wiki pages with version history, discussion topics, live team chat, events with invites and RSVPs, org and project calendars, reports and dashboards with CSV export, portfolio health view
 - Phase 4: invoicing, automation rules, integrations, public API and webhooks, subscriptions, audit log, SSO

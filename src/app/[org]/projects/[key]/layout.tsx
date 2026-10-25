@@ -25,8 +25,11 @@ export default async function ProjectLayout({ children, params }: LayoutProps<"/
     { href: `${base}/gantt`, label: "Gantt" },
     { href: `${base}/bugs`, label: "Bugs" },
     { href: `${base}/time`, label: "Time" },
-    { href: `${base}/files`, label: "Files" },
+    { href: `${base}/docs`, label: "Docs" },
     { href: `${base}/discussion`, label: "Discussion" },
+    { href: `${base}/chat`, label: "Chat" },
+    { href: `${base}/files`, label: "Files" },
+    { href: `${base}/reports`, label: "Reports" },
     ...(ctx.canProject("project.edit") || ctx.canProject("project.manage_members") || ctx.canProject("milestone.manage")
       ? [{ href: `${base}/settings`, label: "Settings" }]
       : []),

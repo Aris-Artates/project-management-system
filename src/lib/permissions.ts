@@ -30,6 +30,13 @@ export const PERMISSIONS = [
   "time.log",
   "time.view_all",
   "timesheet.approve",
+  "report.view",
+  "doc.edit",
+  "doc.delete",
+  "forum.post",
+  "forum.moderate",
+  "chat.use",
+  "event.manage",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];

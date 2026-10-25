@@ -164,6 +164,51 @@ export type CustomField = {
   position: number;
 };
 
+export type Doc = {
+  id: string;
+  project_id: string;
+  parent_id: string | null;
+  title: string;
+  body: string;
+  client_visible: boolean;
+  position: number;
+  version: number;
+  created_by: string | null;
+  updated_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Topic = {
+  id: string;
+  project_id: string;
+  title: string;
+  body: string;
+  author_id: string | null;
+  pinned: boolean;
+  locked: boolean;
+  client_visible: boolean;
+  reply_count: number;
+  last_activity_at: string;
+  created_at: string;
+};
+
+export type ChatMessage = { id: string; project_id: string; author_id: string; body: string; created_at: string; edited_at: string | null };
+
+export type CalendarEvent = {
+  id: string;
+  org_id: string;
+  project_id: string | null;
+  title: string;
+  description: string | null;
+  location: string | null;
+  starts_at: string;
+  ends_at: string;
+  all_day: boolean;
+  client_visible: boolean;
+  created_by: string | null;
+};
+
 export type ProjectTemplate = { id: string; name: string; description: string | null; created_at: string };
 
 export type Comment = {

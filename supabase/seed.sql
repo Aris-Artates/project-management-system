@@ -207,4 +207,43 @@ begin
 end;
 $$;
 
+-- Phase 3 demo: permissions for the sample roles, a wiki page, a topic and an event.
+update public.roles set permissions = permissions || '{report.view,doc.edit,doc.delete,forum.post,forum.moderate,chat.use,event.manage}'
+where name = 'Project Manager' and org_id = '00000000-0000-4000-b000-000000000001';
+update public.roles set permissions = permissions || '{doc.edit,forum.post,chat.use}'
+where name in ('Developer', 'QA') and org_id = '00000000-0000-4000-b000-000000000001';
+update public.roles set permissions = permissions || '{forum.post}'
+where system_key = 'client' and org_id = '00000000-0000-4000-b000-000000000001';
+
+do $$
+declare
+  web uuid := (select id from public.projects where key = 'WEB' and org_id = '00000000-0000-4000-b000-000000000001');
+  pm uuid := '00000000-0000-4000-a000-000000000012';
+  topic uuid;
+  ev uuid;
+begin
+  insert into public.documents (project_id, title, body, client_visible, created_by)
+  values (web, 'Project brief', E'## Goal\n\nLaunch the new marketing site before the spring campaign.\n\n## Scope\n\n- Homepage and three landing pages\n- Contact form\n- Analytics events\n\n## Out of scope\n\n- Blog migration', true, pm);
+  insert into public.documents (project_id, title, body, created_by)
+  values (web, 'Team notes', E'Internal notes for the team.\n\n- Staging deploys go out on Tuesdays\n- Ask Quinn for a test pass before handing work to the client', pm);
+
+  insert into public.topics (project_id, title, body, author_id, pinned)
+  values (web, 'Launch checklist', 'Anything missing before we go live? Add it here.', pm, true)
+  returning id into topic;
+  insert into public.comments (project_id, topic_id, body, author_id)
+  values (web, topic, 'Can we confirm the domain switch date?', '00000000-0000-4000-a000-000000000015');
+
+  insert into public.events (project_id, title, description, location, starts_at, ends_at, client_visible, created_by)
+  values (web, 'Design review with client', 'Walk through the homepage and pricing page.', 'Video call',
+    date_trunc('day', now()) + interval '2 days 15 hours', date_trunc('day', now()) + interval '2 days 16 hours', true, pm)
+  returning id into ev;
+  insert into public.event_attendees (event_id, user_id) values
+    (ev, pm), (ev, '00000000-0000-4000-a000-000000000013'), (ev, '00000000-0000-4000-a000-000000000015');
+
+  insert into public.chat_messages (project_id, body, author_id) values
+    (web, 'Morning! Hero variant is on staging.', '00000000-0000-4000-a000-000000000013'),
+    (web, 'Nice, I will run the test pass after lunch.', '00000000-0000-4000-a000-000000000014');
+end;
+$$;
+
 select set_config('app.creating_org', 'off', false);

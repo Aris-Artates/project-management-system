@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Bell } from "lucide-react";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
+import { subscribeAuthed } from "@/lib/supabase/realtime";
 import { markAllNotificationsRead, markNotificationRead } from "@/lib/actions/notifications";
 import type { Notification } from "@/lib/types";
 import { cn, timeAgo } from "@/lib/utils";
@@ -24,16 +26,23 @@ export function NotificationBell({ userId, initial }: { userId: string; initial:
 
   useEffect(() => {
     const supabase = createClient();
-    const channel = supabase
-      .channel(`notifications:${userId}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },
-        (payload) => setItems((prev) => [payload.new as Notification, ...prev].slice(0, 30)),
-      )
-      .subscribe();
+    let channel: RealtimeChannel | null = null;
+    let cancelled = false;
+    subscribeAuthed(supabase, (client) =>
+      client
+        .channel(`notifications:${userId}:${crypto.randomUUID()}`)
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },
+          (payload) => setItems((prev) => [payload.new as Notification, ...prev].slice(0, 30)),
+        ),
+    ).then((c) => {
+      if (cancelled) supabase.removeChannel(c);
+      else channel = c;
+    });
     return () => {
-      supabase.removeChannel(channel);
+      cancelled = true;
+      if (channel) supabase.removeChannel(channel);
     };
   }, [userId]);
 

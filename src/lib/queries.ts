@@ -1,6 +1,6 @@
 import "server-only";
 import { getSupabase } from "./session";
-import type { Bug, CustomField, Milestone, PersonLite, Role, Tag, Task, TaskList, TaskStatus, TimeEntry, Timer } from "./types";
+import type { Bug, CalendarEvent, Doc, Topic, CustomField, Milestone, PersonLite, Role, Tag, Task, TaskList, TaskStatus, TimeEntry, Timer } from "./types";
 
 export type TaskRow = Task & {
   assignees: { user_id: string; profile: PersonLite }[];
@@ -97,7 +97,7 @@ export async function getComments(projectId: string, taskId: string | null) {
     .select("id, body, is_internal, created_at, edited_at, author_id, author:profiles!comments_author_id_fkey(id, full_name, email, avatar_url)")
     .eq("project_id", projectId)
     .order("created_at");
-  query = taskId ? query.eq("task_id", taskId) : query.is("task_id", null).is("bug_id", null);
+  query = taskId ? query.eq("task_id", taskId) : query.is("task_id", null).is("bug_id", null).is("topic_id", null);
   const { data } = await query;
   return (data ?? []) as unknown as CommentRow[];
 }
@@ -238,4 +238,107 @@ export async function getFieldValues(taskId: string) {
   const supabase = await getSupabase();
   const { data } = await supabase.from("task_field_values").select("field_id, value").eq("task_id", taskId);
   return new Map((data ?? []).map((v) => [v.field_id as string, v.value as string | null]));
+}
+
+// --- Phase 3 ------------------------------------------------------------------
+
+export async function getDocs(projectId: string) {
+  const supabase = await getSupabase();
+  const { data } = await supabase
+    .from("documents")
+    .select("id, project_id, parent_id, title, client_visible, position, version, updated_at, updated_by")
+    .eq("project_id", projectId)
+    .order("position")
+    .order("title");
+  return (data ?? []) as Omit<Doc, "body" | "created_by" | "created_at">[];
+}
+
+export async function getDoc(id: string) {
+  const supabase = await getSupabase();
+  const { data } = await supabase
+    .from("documents")
+    .select("*, editor:profiles!documents_updated_by_fkey(id, full_name, email, avatar_url)")
+    .eq("id", id)
+    .maybeSingle();
+  return data as (Doc & { editor: PersonLite | null }) | null;
+}
+
+export async function getDocVersions(docId: string) {
+  const supabase = await getSupabase();
+  const { data } = await supabase
+    .from("document_versions")
+    .select("id, version, title, body, created_at, editor:profiles!document_versions_edited_by_fkey(id, full_name, email, avatar_url)")
+    .eq("document_id", docId)
+    .order("version", { ascending: false });
+  return (data ?? []) as unknown as { id: string; version: number; title: string; body: string; created_at: string; editor: PersonLite | null }[];
+}
+
+export type TopicRow = Topic & { author: PersonLite | null };
+
+export async function getTopics(projectId: string) {
+  const supabase = await getSupabase();
+  const { data } = await supabase
+    .from("topics")
+    .select("*, author:profiles!topics_author_id_fkey(id, full_name, email, avatar_url)")
+    .eq("project_id", projectId)
+    .order("pinned", { ascending: false })
+    .order("last_activity_at", { ascending: false });
+  return (data ?? []) as unknown as TopicRow[];
+}
+
+export async function getTopic(id: string) {
+  const supabase = await getSupabase();
+  const { data } = await supabase
+    .from("topics")
+    .select("*, author:profiles!topics_author_id_fkey(id, full_name, email, avatar_url)")
+    .eq("id", id)
+    .maybeSingle();
+  return data as unknown as TopicRow | null;
+}
+
+export async function getTopicComments(projectId: string, topicId: string) {
+  const supabase = await getSupabase();
+  const { data } = await supabase
+    .from("comments")
+    .select("id, body, is_internal, created_at, edited_at, author_id, author:profiles!comments_author_id_fkey(id, full_name, email, avatar_url)")
+    .eq("project_id", projectId)
+    .eq("topic_id", topicId)
+    .order("created_at");
+  return (data ?? []) as unknown as CommentRow[];
+}
+
+export type ChatRow = { id: string; body: string; created_at: string; author_id: string; author: PersonLite | null };
+
+export async function getChat(projectId: string, limit = 100) {
+  const supabase = await getSupabase();
+  const { data } = await supabase
+    .from("chat_messages")
+    .select("id, body, created_at, author_id, author:profiles!chat_messages_author_id_fkey(id, full_name, email, avatar_url)")
+    .eq("project_id", projectId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  return ((data ?? []) as unknown as ChatRow[]).reverse();
+}
+
+export type EventRow = CalendarEvent & {
+  project: { key: string; name: string; color: string } | null;
+  attendees: { user_id: string; response: string; profile: PersonLite | null }[];
+};
+
+const EVENT_SELECT =
+  "*, project:projects(key, name, color), attendees:event_attendees(user_id, response, profile:profiles(id, full_name, email, avatar_url))";
+
+export async function getEvents(filter: { orgId?: string; projectId?: string; from: string; to: string }) {
+  const supabase = await getSupabase();
+  let q = supabase.from("events").select(EVENT_SELECT).lte("starts_at", filter.to).gte("ends_at", filter.from).order("starts_at");
+  if (filter.orgId) q = q.eq("org_id", filter.orgId);
+  if (filter.projectId) q = q.eq("project_id", filter.projectId);
+  const { data } = await q;
+  return (data ?? []) as unknown as EventRow[];
+}
+
+export async function getEvent(id: string) {
+  const supabase = await getSupabase();
+  const { data } = await supabase.from("events").select(EVENT_SELECT).eq("id", id).maybeSingle();
+  return data as unknown as EventRow | null;
 }
