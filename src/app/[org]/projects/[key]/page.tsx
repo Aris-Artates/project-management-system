@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { getProjectContext, displayName } from "@/lib/session";
+import { getProjectContext, getSupabase, displayName } from "@/lib/session";
+import { BudgetCard, type Financials } from "@/components/budget-card";
 import { getActivity, getProjectMembers, getProjectWork } from "@/lib/queries";
 import { Avatar, Badge, Card, CardHeader, Dot, EmptyState } from "@/components/ui";
 import { DueLabel, StatusPill, TaskRef } from "@/components/project-bits";
@@ -15,6 +16,11 @@ export default async function ProjectOverview({ params }: PageProps<"/[org]/proj
     getActivity(ctx.project.id, 15),
   ]);
 
+  let financials: Financials | null = null;
+  if (ctx.canProject("budget.view")) {
+    const { data } = await (await getSupabase()).rpc("project_financials", { _project: ctx.project.id });
+    financials = ((data as Financials[] | null) ?? [])[0] ?? null;
+  }
   const done = tasks.filter((t) => t.completed_at).length;
   const overdue = tasks.filter((t) => isOverdue(t.due_date, !!t.completed_at));
   const pct = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
@@ -108,6 +114,7 @@ export default async function ProjectOverview({ params }: PageProps<"/[org]/proj
       </div>
 
       <div className="flex flex-col gap-6">
+        {financials && <BudgetCard f={financials} />}
         <Card>
           <CardHeader title="Milestones" />
           {milestones.length === 0 ? (

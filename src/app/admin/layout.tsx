@@ -28,6 +28,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
             Organizations
           </TabLink>
           <TabLink href="/admin/users">People</TabLink>
+          <TabLink href="/admin/audit">Audit log</TabLink>
         </nav>
       </header>
       <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>

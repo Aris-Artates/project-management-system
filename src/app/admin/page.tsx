@@ -2,7 +2,8 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { getSupabase } from "@/lib/session";
 import { adminCreateOrganization, adminDeleteOrganization, adminSetOrgStatus } from "@/lib/actions/admin";
-import { ActionForm, ConfirmButton, SubmitButton } from "@/components/form";
+import { ActionForm, AutoSubmitSelect, ConfirmButton, SubmitButton } from "@/components/form";
+import { adminSetOrgPlan } from "@/lib/actions/admin-org";
 import { Badge, Button, Card, CardHeader, Field, Input, PageHeader } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
 
@@ -10,10 +11,11 @@ export const metadata: Metadata = { title: "Platform admin" };
 
 export default async function AdminOrgs() {
   const supabase = await getSupabase();
-  const [{ data: orgs }, { data: members }, { data: projects }] = await Promise.all([
+  const [{ data: orgs }, { data: members }, { data: projects }, { data: plans }] = await Promise.all([
     supabase.from("organizations").select("id, name, slug, plan, status, created_at").order("created_at", { ascending: false }),
     supabase.from("org_members").select("org_id, role:roles(system_key)"),
     supabase.from("projects").select("org_id"),
+    supabase.from("plans").select("key, name").order("position"),
   ]);
 
   const stats = new Map<string, { team: number; clients: number; projects: number }>();
@@ -36,6 +38,7 @@ export default async function AdminOrgs() {
             <thead className="border-b border-line text-left text-xs text-muted">
               <tr>
                 <th className="px-4 py-2 font-medium">Organization</th>
+                <th className="px-2 py-2 font-medium">Plan</th>
                 <th className="px-2 py-2 font-medium">Team</th>
                 <th className="px-2 py-2 font-medium">Clients</th>
                 <th className="px-2 py-2 font-medium">Projects</th>
@@ -53,8 +56,20 @@ export default async function AdminOrgs() {
                         {o.name}
                       </Link>
                       <span className="block text-xs text-muted">
-                        /{o.slug} · {o.plan}
+                        /{o.slug}
                       </span>
+                    </td>
+                    <td className="px-2">
+                      <form action={adminSetOrgPlan}>
+                        <input type="hidden" name="org_id" value={o.id} />
+                        <AutoSubmitSelect name="plan" defaultValue={o.plan} aria-label={`Plan for ${o.name}`} className="h-8 rounded-lg border border-line-strong bg-surface px-2 text-xs">
+                          {(plans ?? []).map((p) => (
+                            <option key={p.key} value={p.key}>
+                              {p.name}
+                            </option>
+                          ))}
+                        </AutoSubmitSelect>
+                      </form>
                     </td>
                     <td className="px-2">{s.team}</td>
                     <td className="px-2">{s.clients}</td>

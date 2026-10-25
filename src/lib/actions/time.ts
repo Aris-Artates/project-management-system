@@ -98,10 +98,19 @@ export async function submitWeek(_: ActionState, form: FormData): Promise<Action
   return { ok: data.length ? `Submitted ${data.length} entr${data.length === 1 ? "y" : "ies"}` : "Nothing to submit" };
 }
 
-export async function reviewTime(form: FormData) {
+// Separate actions per button: a server-action button does not send its own
+// name/value, so one shared action could not tell approve from reject.
+async function reviewTime(form: FormData, status: "approved" | "rejected") {
   const supabase = await createClient();
-  const status = str(form, "status") === "approved" ? "approved" : "rejected";
   const ids = form.getAll("entry_id").map(String);
   if (ids.length) await supabase.from("time_entries").update({ status }).in("id", ids).eq("status", "submitted");
   refreshOrg(str(form, "org_slug"));
+}
+
+export async function approveTime(form: FormData) {
+  await reviewTime(form, "approved");
+}
+
+export async function rejectTime(form: FormData) {
+  await reviewTime(form, "rejected");
 }

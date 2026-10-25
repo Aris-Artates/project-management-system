@@ -36,10 +36,10 @@ export function CommentThread({
       {comments.length === 0 && <p className="text-sm text-muted">No comments yet.</p>}
       {comments.map((c) => (
         <div key={c.id} className={`flex gap-3 ${c.is_internal ? "rounded-lg bg-warning-soft/50 p-2 -m-2" : ""}`}>
-          <Avatar name={displayName(c.author)} src={c.author?.avatar_url} size={30} />
+          <Avatar name={c.author ? displayName(c.author) : "Automation"} src={c.author?.avatar_url} size={30} />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2 text-sm">
-              <span className="font-medium">{displayName(c.author)}</span>
+              <span className="font-medium">{c.author ? displayName(c.author) : "Automation"}</span>
               <span className="text-xs text-muted">{timeAgo(c.created_at)}</span>
               {c.edited_at && <span className="text-xs text-muted">(edited)</span>}
               {c.is_internal && (

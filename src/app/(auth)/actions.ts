@@ -75,6 +75,21 @@ export async function signUp(_: ActionState, form: FormData): Promise<ActionStat
   redirect(next);
 }
 
+// Enterprise sign-in: the email's domain picks the identity provider registered in Supabase.
+export async function signInWithSso(_: ActionState, form: FormData): Promise<ActionState> {
+  const email = z.email().safeParse(String(form.get("email") ?? "").trim().toLowerCase());
+  if (!email.success) return { error: "Enter your work email" };
+  const domain = email.data.split("@")[1]!;
+  const supabase = await createClient();
+  const next = safeNext(form.get("next"));
+  const { data, error } = await supabase.auth.signInWithSSO({
+    domain,
+    options: { redirectTo: `${await origin()}/auth/callback?next=${encodeURIComponent(next)}` },
+  });
+  if (error || !data?.url) return { error: `Single sign-on is not set up for ${domain}. Use your password or a sign-in link.` };
+  redirect(data.url);
+}
+
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();

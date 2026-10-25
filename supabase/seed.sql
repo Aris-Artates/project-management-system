@@ -246,4 +246,24 @@ begin
 end;
 $$;
 
+-- Phase 4 demo: plan, rates, budget, billing permissions, site URL.
+insert into public.app_settings (key, value) values ('site_url', 'https://pm-aris.vercel.app')
+on conflict (key) do update set value = excluded.value;
+
+update public.organizations set plan = 'team', tax_rate = 12, billing_address = E'Acme Studio\n123 Market Street\nSpringfield'
+where id = '00000000-0000-4000-b000-000000000001';
+
+update public.roles set permissions = permissions || '{invoice.manage,budget.view}'
+where name = 'Project Manager' and org_id = '00000000-0000-4000-b000-000000000001';
+
+update public.projects set hourly_rate = 120, budget_amount = 15000, budget_hours = 120,
+  client_name = 'Carla Client', client_email = 'client@acme.test'
+where key = 'WEB' and org_id = '00000000-0000-4000-b000-000000000001';
+
+insert into public.member_rates (org_id, user_id, hourly_rate, cost_rate) values
+  ('00000000-0000-4000-b000-000000000001', '00000000-0000-4000-a000-000000000012', 150, 70),
+  ('00000000-0000-4000-b000-000000000001', '00000000-0000-4000-a000-000000000013', 110, 55),
+  ('00000000-0000-4000-b000-000000000001', '00000000-0000-4000-a000-000000000014', 90, 45)
+on conflict (org_id, user_id) do nothing;
+
 select set_config('app.creating_org', 'off', false);

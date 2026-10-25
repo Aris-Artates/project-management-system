@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { getOrgContext, displayName } from "@/lib/session";
 import { getMyTimer, getTimeEntries } from "@/lib/queries";
-import { reviewTime, stopTimer, submitWeek } from "@/lib/actions/time";
+import { approveTime, rejectTime, stopTimer, submitWeek } from "@/lib/actions/time";
 import { ActionForm, SubmitButton } from "@/components/form";
 import { ElapsedClock } from "@/components/elapsed-clock";
 import { formatMinutes, TIME_STATUS } from "@/components/time-log";
@@ -129,10 +129,10 @@ export default async function TimesheetPage({ params, searchParams }: PageProps<
                 ))}
               </ul>
               <div className="flex gap-2 border-t border-line p-3">
-                <Button formAction={reviewTime} name="status" value="approved" size="sm">
+                <Button formAction={approveTime} size="sm">
                   Approve selected
                 </Button>
-                <Button formAction={reviewTime} name="status" value="rejected" size="sm" variant="secondary">
+                <Button formAction={rejectTime} size="sm" variant="secondary">
                   Reject selected
                 </Button>
               </div>

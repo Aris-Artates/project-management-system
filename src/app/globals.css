@@ -169,3 +169,8 @@ body {
   --chart-grid: #2c2c2a;
   --chart-axis: #383835;
 }
+
+@media print {
+  body { background: #fff; }
+  main { padding: 0 !important; }
+}

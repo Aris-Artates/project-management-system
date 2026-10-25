@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-import { CalendarDays, ChartBar, Clock, Folder, Home, LayoutGrid, Settings, Shield, TrendingUp, Users, type LucideIcon } from "lucide-react";
+import { CalendarDays, ChartBar, Clock, Folder, Home, LayoutGrid, Receipt, Settings, Shield, TrendingUp, Users, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ICONS = {
@@ -14,6 +14,7 @@ const ICONS = {
   chart: ChartBar,
   trend: TrendingUp,
   grid: LayoutGrid,
+  receipt: Receipt,
   users: Users,
   shield: Shield,
   settings: Settings,

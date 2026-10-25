@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { getOrgContext } from "@/lib/session";
 import { updateOrganization } from "@/lib/actions/org";
 import { ActionForm, SubmitButton } from "@/components/form";
-import { Card, CardHeader, Field, Input, PageHeader } from "@/components/ui";
+import { Card, CardHeader, Field, Input } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -13,8 +13,7 @@ export default async function SettingsPage({ params }: PageProps<"/[org]/setting
   if (!ctx.can("org.settings")) redirect(`/${slug}`);
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <PageHeader title="Organization settings" />
+    <div className="max-w-2xl">
       <Card>
         <CardHeader title="General" />
         <ActionForm action={updateOrganization} className="flex flex-col gap-4 p-4">

@@ -21,9 +21,21 @@ export const getProfile = cache(async (): Promise<Profile | null> => {
   return (data as Profile) ?? null;
 });
 
+// Assurance level from the session token: aal2 means a second factor was used.
+export const getAal = cache(async () => {
+  const supabase = await getSupabase();
+  const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  return { current: data?.currentLevel ?? "aal1", next: data?.nextLevel ?? "aal1" };
+});
+
 export async function requireProfile(next?: string): Promise<Profile> {
   const profile = await getProfile();
   if (!profile) redirect(next ? `/login?next=${encodeURIComponent(next)}` : "/login");
+  // People with an authenticator app must enter a code before going further.
+  const aal = await getAal();
+  if (aal.next === "aal2" && aal.current !== "aal2") {
+    redirect(`/login/mfa${next ? `?next=${encodeURIComponent(next)}` : ""}`);
+  }
   return profile;
 }
 
@@ -55,6 +67,11 @@ export const getOrgContext = cache(async (slug: string): Promise<OrgContext> => 
   const role = member?.status === "active" ? ((member.role as unknown as Role) ?? null) : null;
   if (!isPlatformAdmin && (!role || org.status !== "active")) {
     redirect(org.status !== "active" ? `/suspended?org=${encodeURIComponent(org.name)}` : "/orgs");
+  }
+
+  // Organizations can require two-factor authentication for their members.
+  if (org.require_mfa && !isPlatformAdmin && (await getAal()).current !== "aal2") {
+    redirect(`/account?mfa=required&org=${encodeURIComponent(org.name)}`);
   }
 
   const isOrgAdmin = isPlatformAdmin || role?.system_key === "org_admin";

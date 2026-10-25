@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getOrgContext, getSupabase } from "@/lib/session";
 import { AppShell } from "@/components/app-shell";
+import { settingsTabs } from "@/lib/settings-tabs";
 import type { Notification } from "@/lib/types";
 
 export default async function OrgLayout({ children, params }: LayoutProps<"/[org]">) {
@@ -45,7 +46,8 @@ export default async function OrgLayout({ children, params }: LayoutProps<"/[org
       : []),
     { href: `/${slug}/members`, label: "Members", icon: "users" as const },
     ...(ctx.can("role.manage") ? [{ href: `/${slug}/roles`, label: "Roles and access", icon: "shield" as const }] : []),
-    ...(ctx.can("org.settings") ? [{ href: `/${slug}/settings`, label: "Settings", icon: "settings" as const }] : []),
+    ...(ctx.can("invoice.manage") ? [{ href: `/${slug}/invoices`, label: "Invoices", icon: "receipt" as const }] : []),
+    ...(settingsTabs(slug, ctx.can).length ? [{ href: settingsTabs(slug, ctx.can)[0]!.href, label: "Settings", icon: "settings" as const }] : []),
   ];
 
   return (

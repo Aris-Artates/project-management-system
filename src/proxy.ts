@@ -1,7 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/", "/login", "/signup", "/auth", "/invite"];
+// /api routes authenticate themselves (API keys, webhook signatures, feed tokens).
+const PUBLIC_PATHS = ["/", "/login", "/signup", "/auth", "/invite", "/api"];
 
 function isPublic(pathname: string) {
   return PUBLIC_PATHS.some((p) => pathname === p || (p !== "/" && pathname.startsWith(p + "/")));

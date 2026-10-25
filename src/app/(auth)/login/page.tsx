@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { ActionForm, SubmitButton } from "@/components/form";
 import { Card, Field, Input } from "@/components/ui";
-import { sendMagicLink, signIn } from "../actions";
+import { sendMagicLink, signIn, signInWithSso } from "../actions";
 
 export const metadata: Metadata = { title: "Sign in" };
 
@@ -42,6 +42,17 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
           Send link
         </SubmitButton>
       </ActionForm>
+
+      <details className="mt-5 text-sm">
+        <summary className="cursor-pointer text-muted hover:text-fg">Continue with single sign-on (SSO)</summary>
+        <ActionForm action={signInWithSso} className="mt-3 flex flex-col gap-3">
+          <input type="hidden" name="next" value={nextValue} />
+          <Input name="email" type="email" autoComplete="email" placeholder="you@company.com" required aria-label="Work email" />
+          <SubmitButton variant="secondary" pendingText="Redirecting...">
+            Continue with SSO
+          </SubmitButton>
+        </ActionForm>
+      </details>
 
       <p className="mt-6 text-center text-sm text-muted">
         New here?{" "}

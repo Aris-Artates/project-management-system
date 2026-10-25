@@ -1,5 +1,6 @@
 import { getProjectContext, getSupabase, displayName } from "@/lib/session";
 import { getCustomFields, getProjectMembers, getProjectWork } from "@/lib/queries";
+import { saveProjectBilling } from "@/lib/actions/invoices";
 import {
   addList,
   addMilestone,
@@ -288,6 +289,42 @@ export default async function ProjectSettings({ params }: PageProps<"/[org]/proj
             </ActionForm>
           </Card>
         </>
+      )}
+
+      {ctx.can("invoice.manage") && (
+        <Card className="lg:col-span-2">
+          <CardHeader title="Billing and budget" description={`Amounts in ${ctx.org.currency}.`} />
+          <ActionForm action={saveProjectBilling} className="grid gap-4 p-4 sm:grid-cols-3">
+            {common}
+            <Field label="Billing">
+              <Select name="billing_type" defaultValue={p.billing_type ?? "hourly"}>
+                <option value="hourly">Hourly (time and materials)</option>
+                <option value="fixed">Fixed fee</option>
+                <option value="none">Not billed</option>
+              </Select>
+            </Field>
+            <Field label="Default hourly rate" hint="Personal rates take priority">
+              <Input name="hourly_rate" type="number" min={0} step={0.01} defaultValue={p.hourly_rate ?? ""} />
+            </Field>
+            <div />
+            <Field label="Budget amount">
+              <Input name="budget_amount" type="number" min={0} step={0.01} defaultValue={p.budget_amount ?? ""} />
+            </Field>
+            <Field label="Budget hours">
+              <Input name="budget_hours" type="number" min={0} step={0.5} defaultValue={p.budget_hours ?? ""} />
+            </Field>
+            <div />
+            <Field label="Client name" hint="Used on invoices">
+              <Input name="client_name" defaultValue={p.client_name ?? ""} maxLength={200} />
+            </Field>
+            <Field label="Client billing email">
+              <Input name="client_email" type="email" defaultValue={p.client_email ?? ""} />
+            </Field>
+            <div className="sm:col-span-3">
+              <SubmitButton size="sm">Save billing</SubmitButton>
+            </div>
+          </ActionForm>
+        </Card>
       )}
 
       {canEdit && (

@@ -37,6 +37,12 @@ export const PERMISSIONS = [
   "forum.moderate",
   "chat.use",
   "event.manage",
+  "billing.manage",
+  "audit.view",
+  "integration.manage",
+  "automation.manage",
+  "invoice.manage",
+  "budget.view",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];

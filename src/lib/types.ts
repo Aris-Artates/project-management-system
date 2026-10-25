@@ -16,6 +16,62 @@ export type Organization = {
   plan: string;
   status: "active" | "suspended";
   created_at: string;
+  currency: string;
+  invoice_prefix: string;
+  tax_rate: number;
+  payment_terms_days: number;
+  billing_address: string | null;
+  require_mfa: boolean;
+  sso_domain: string | null;
+  subscription_status: string | null;
+  current_period_end: string | null;
+};
+
+export type Plan = {
+  key: string;
+  name: string;
+  max_members: number | null;
+  max_projects: number | null;
+  max_storage_mb: number | null;
+  price_monthly: number;
+  position: number;
+};
+
+export type Invoice = {
+  id: string;
+  org_id: string;
+  project_id: string | null;
+  number: string;
+  status: "draft" | "sent" | "paid" | "void";
+  issue_date: string;
+  due_date: string | null;
+  currency: string;
+  bill_to_name: string | null;
+  bill_to_email: string | null;
+  notes: string | null;
+  subtotal: number;
+  tax_rate: number;
+  tax_amount: number;
+  total: number;
+  created_at: string;
+  sent_at: string | null;
+  paid_at: string | null;
+};
+
+export type InvoiceItem = { id: string; description: string; quantity: number; unit_price: number; amount: number; position: number };
+
+export type AutomationRule = {
+  id: string;
+  org_id: string;
+  project_id: string | null;
+  name: string;
+  enabled: boolean;
+  trigger: "task.created" | "task.status_changed" | "task.completed" | "bug.created" | "bug.status_changed";
+  conditions: Record<string, string>;
+  actions: Record<string, string | boolean>[];
+  run_count: number;
+  last_run_at: string | null;
+  created_at: string;
 };
 
 export type Role = {
@@ -51,6 +107,12 @@ export type Project = {
   end_date: string | null;
   owner_id: string | null;
   created_at: string;
+  billing_type?: "none" | "hourly" | "fixed";
+  hourly_rate?: number | null;
+  budget_amount?: number | null;
+  budget_hours?: number | null;
+  client_name?: string | null;
+  client_email?: string | null;
 };
 
 export type TaskStatus = {

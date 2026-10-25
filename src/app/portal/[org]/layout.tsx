@@ -20,7 +20,7 @@ export default async function PortalLayout({ children, params }: LayoutProps<"/p
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-20 border-b border-line bg-surface/95 backdrop-blur">
+      <header className="sticky top-0 z-20 border-b border-line bg-surface/95 backdrop-blur print:hidden">
         <div className="mx-auto flex h-14 max-w-5xl items-center gap-3 px-4">
           <Link href={`/portal/${slug}`} className="flex items-center gap-2 font-semibold">
             {ctx.org.logo_url ? (
@@ -33,6 +33,9 @@ export default async function PortalLayout({ children, params }: LayoutProps<"/p
           </Link>
           <span className="hidden rounded-md bg-ember-soft px-1.5 py-0.5 text-xs font-medium text-ember sm:inline">Client portal</span>
           <div className="ml-auto flex items-center gap-2">
+            <Link href={`/portal/${slug}/invoices`} className="rounded-lg px-2 py-1 text-sm text-muted hover:bg-surface-2 hover:text-fg">
+              Invoices
+            </Link>
             <NotificationBell userId={ctx.profile.id} initial={(notifications ?? []) as Notification[]} />
             <Avatar name={displayName(ctx.profile)} src={ctx.profile.avatar_url} />
             <form action={signOut}>

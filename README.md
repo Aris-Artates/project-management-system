@@ -51,11 +51,21 @@ To make your own account a Dev, sign up first and then run in the SQL editor:
 update public.profiles set platform_role = 'dev' where email = 'you@example.com';
 ```
 
-Emails (invitations, assignments, mentions) are sent through SMTP when `SMTP_HOST` is set; otherwise they are skipped and logged.
+Emails (invitations, assignments, mentions, invoices) are sent through SMTP when `SMTP_HOST` is set; otherwise they are skipped and logged.
+
+### Integrations and platform settings
+
+- **Site URL for links in webhooks and calendar feeds**: run `insert into public.app_settings (key, value) values ('site_url', 'https://your-domain') on conflict (key) do update set value = excluded.value;`
+- **Webhooks and Slack** are delivered from the database with the `pg_net` extension; event reminders run every 10 minutes with `pg_cron`. Both are enabled by the migrations.
+- **GitHub**: connect it under Settings, Integrations, then add the shown payload URL and secret as a push webhook in the repository.
+- **Public API**: create keys under Settings, Integrations. The reference is on the API reference page there.
+- **Stripe** (optional): set the `STRIPE_*` variables and `SUPABASE_SERVICE_ROLE_KEY`, create a webhook in Stripe pointing to `/api/billing/webhook` with the events `checkout.session.completed`, `customer.subscription.updated` and `customer.subscription.deleted`. Without Stripe, platform admins set plans in the admin console.
+- **SSO**: register a SAML identity provider in Supabase (paid plan), then set the organization's SSO domain under Settings, Security.
+- **Two-factor authentication** works out of the box (authenticator apps). Organizations can require it under Settings, Security.
 
 ## Roadmap
 
 - Phase 1 (done): organizations, invitations, role builder, projects, tasks and subtasks, list, board and calendar views, comments with mentions, files, notifications, client portal, search, platform admin
 - Phase 2 (done): Gantt with dependencies and drag to reschedule, bug tracker with a verify and close workflow, time tracking with timers, weekly timesheets and approvals, project templates, custom fields, recurring tasks, workload view
 - Phase 3 (done): wiki pages with version history, discussion topics, live team chat, events with invites and RSVPs, org and project calendars, reports and dashboards with CSV export, portfolio health view
-- Phase 4: invoicing, automation rules, integrations, public API and webhooks, subscriptions, audit log, SSO
+- Phase 4 (done): budgets, rates and invoicing, automation rules, webhooks and Slack, GitHub commit linking, iCal feeds, public REST API with keys, plans with limits and optional Stripe billing, audit log, two-factor sign-in, SSO sign-in, data export

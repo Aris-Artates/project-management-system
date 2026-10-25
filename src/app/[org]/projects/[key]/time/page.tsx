@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getProjectContext, displayName } from "@/lib/session";
 import { getProjectWork, getTimeEntries } from "@/lib/queries";
-import { reviewTime } from "@/lib/actions/time";
+import { approveTime, rejectTime } from "@/lib/actions/time";
 import { formatMinutes, TIME_STATUS } from "@/components/time-log";
 import { Avatar, Badge, Button, Card, CardHeader, EmptyState, Input } from "@/components/ui";
 import { formatDate, isoInDays } from "@/lib/utils";
@@ -76,10 +76,10 @@ export default async function ProjectTimePage({ params, searchParams }: PageProp
               ))}
             </ul>
             <div className="flex gap-2 border-t border-line p-3">
-              <Button formAction={reviewTime} name="status" value="approved" size="sm">
+              <Button formAction={approveTime} size="sm">
                 Approve selected
               </Button>
-              <Button formAction={reviewTime} name="status" value="rejected" size="sm" variant="secondary">
+              <Button formAction={rejectTime} size="sm" variant="secondary">
                 Reject selected
               </Button>
             </div>

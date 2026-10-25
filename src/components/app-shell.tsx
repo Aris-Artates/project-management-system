@@ -97,7 +97,9 @@ export function AppShell({
 
       <div className="mt-auto flex items-center gap-2 border-t border-line pt-3">
         <Avatar name={displayName(profile)} src={profile.avatar_url} />
-        <span className="min-w-0 flex-1 truncate text-sm">{displayName(profile)}</span>
+        <Link href="/account" className="min-w-0 flex-1 truncate text-sm hover:text-brand" title="Your account">
+          {displayName(profile)}
+        </Link>
         <form action={signOut}>
           <button className="text-xs text-muted hover:text-fg">Sign out</button>
         </form>
@@ -107,12 +109,12 @@ export function AppShell({
 
   return (
     <div className="flex min-h-screen w-full">
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-line bg-surface px-3 py-3 lg:flex">
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-line bg-surface px-3 py-3 lg:flex print:hidden">
         {sidebar}
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-line bg-bg/90 px-4 backdrop-blur sm:px-6">
+        <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-line bg-bg/90 px-4 backdrop-blur sm:px-6 print:hidden">
           <details className="relative lg:hidden">
             <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-semibold">
               <Logo size={24} />
