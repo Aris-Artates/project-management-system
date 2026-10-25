@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getProjectContext, displayName } from "@/lib/session";
+import { getProjectContext, displayName, requireFeature } from "@/lib/session";
 import { getBug, getBugComments, getMyTimer, getProjectMembers, getProjectWork, getTimeEntries } from "@/lib/queries";
 import { deleteBug, setBugStatus, updateBug } from "@/lib/actions/bugs";
 import { BUG_NEXT, BUG_STATUS, REPRODUCIBILITY, SEVERITY } from "@/lib/bug-meta";
@@ -26,6 +26,7 @@ export default async function BugPage({ params }: PageProps<"/[org]/projects/[ke
   const { org: slug, key, number } = await params;
   const ctx = await getProjectContext(slug, key);
   const n = Number(number);
+  requireFeature(ctx, "bugs");
   if (!Number.isInteger(n)) notFound();
   const bug = await getBug(ctx.project.id, n);
   if (!bug) notFound();

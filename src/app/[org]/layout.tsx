@@ -38,16 +38,20 @@ export default async function OrgLayout({ children, params }: LayoutProps<"/[org
     { href: `/${slug}`, label: "My work", icon: "home" as const, exact: true },
     { href: `/${slug}/projects`, label: "Projects", icon: "folder" as const },
     { href: `/${slug}/calendar`, label: "Calendar", icon: "calendar" as const },
-    { href: `/${slug}/timesheet`, label: "Timesheet", icon: "clock" as const },
-    { href: `/${slug}/workload`, label: "Workload", icon: "chart" as const },
+    ...(ctx.feature("time")
+      ? [
+          { href: `/${slug}/timesheet`, label: "Timesheet", icon: "clock" as const },
+          { href: `/${slug}/workload`, label: "Workload", icon: "chart" as const },
+        ]
+      : []),
     ...(ctx.can("report.view") ? [{ href: `/${slug}/reports`, label: "Reports", icon: "trend" as const }] : []),
     ...(ctx.can("report.view") || ctx.can("project.view_all")
       ? [{ href: `/${slug}/portfolio`, label: "Portfolio", icon: "grid" as const }]
       : []),
     { href: `/${slug}/members`, label: "Members", icon: "users" as const },
     ...(ctx.can("role.manage") ? [{ href: `/${slug}/roles`, label: "Roles and access", icon: "shield" as const }] : []),
-    ...(ctx.can("invoice.manage") ? [{ href: `/${slug}/invoices`, label: "Invoices", icon: "receipt" as const }] : []),
-    ...(settingsTabs(slug, ctx.can).length ? [{ href: settingsTabs(slug, ctx.can)[0]!.href, label: "Settings", icon: "settings" as const }] : []),
+    ...(ctx.can("invoice.manage") && ctx.feature("invoices") ? [{ href: `/${slug}/invoices`, label: "Invoices", icon: "receipt" as const }] : []),
+    ...(settingsTabs(slug, ctx.can, ctx.feature).length ? [{ href: settingsTabs(slug, ctx.can, ctx.feature)[0]!.href, label: "Settings", icon: "settings" as const }] : []),
   ];
 
   return (

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getProjectContext, displayName } from "@/lib/session";
+import { getProjectContext, displayName, requireFeature } from "@/lib/session";
 import { getProjectWork, getTimeEntries } from "@/lib/queries";
 import { approveTime, rejectTime } from "@/lib/actions/time";
 import { formatMinutes, TIME_STATUS } from "@/components/time-log";
@@ -10,6 +10,7 @@ export default async function ProjectTimePage({ params, searchParams }: PageProp
   const { org: slug, key } = await params;
   const sp = await searchParams;
   const ctx = await getProjectContext(slug, key);
+  requireFeature(ctx, "time");
   const from = typeof sp.from === "string" ? sp.from : isoInDays(-30);
   const to = typeof sp.to === "string" ? sp.to : isoInDays(0);
   const [entries, { tasks }] = await Promise.all([getTimeEntries({ projectId: ctx.project.id, from, to }), getProjectWork(ctx.project.id)]);

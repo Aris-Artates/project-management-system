@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getOrgContext, getSupabase } from "@/lib/session";
+import { getOrgContext, getSupabase, requireFeature } from "@/lib/session";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui";
 import { INVOICE_STATUS, money } from "@/lib/money";
 import { formatDate, todayISO } from "@/lib/utils";
@@ -8,6 +8,7 @@ import type { Invoice } from "@/lib/types";
 export default async function PortalInvoices({ params }: PageProps<"/portal/[org]/invoices">) {
   const { org: slug } = await params;
   const ctx = await getOrgContext(slug);
+  requireFeature(ctx, "invoices");
   const supabase = await getSupabase();
   const { data } = await supabase.from("invoices").select("*, project:projects(name)").eq("org_id", ctx.org.id).order("issue_date", { ascending: false });
   const invoices = (data ?? []) as unknown as (Invoice & { project: { name: string } | null })[];

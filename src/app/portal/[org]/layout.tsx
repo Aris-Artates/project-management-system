@@ -33,9 +33,11 @@ export default async function PortalLayout({ children, params }: LayoutProps<"/p
           </Link>
           <span className="hidden rounded-md bg-ember-soft px-1.5 py-0.5 text-xs font-medium text-ember sm:inline">Client portal</span>
           <div className="ml-auto flex items-center gap-2">
-            <Link href={`/portal/${slug}/invoices`} className="rounded-lg px-2 py-1 text-sm text-muted hover:bg-surface-2 hover:text-fg">
-              Invoices
-            </Link>
+            {ctx.feature("invoices") && (
+              <Link href={`/portal/${slug}/invoices`} className="rounded-lg px-2 py-1 text-sm text-muted hover:bg-surface-2 hover:text-fg">
+                Invoices
+              </Link>
+            )}
             <NotificationBell userId={ctx.profile.id} initial={(notifications ?? []) as Notification[]} />
             <Avatar name={displayName(ctx.profile)} src={ctx.profile.avatar_url} />
             <form action={signOut}>

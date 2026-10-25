@@ -1,12 +1,14 @@
 {
-  "name": "project-management-system",
+  "name": "projectline",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3200",
     "build": "next build",
     "start": "next start -p 3200",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:db": "node --test \"tests/db/*.test.mjs\"",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -26,13 +28,16 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@playwright/test": "^1.56.1",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
     "@types/nodemailer": "^8.0.2",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.2",
+    "pg": "^8.13.1",
     "supabase": "^2.121.0",
     "tailwindcss": "^4",
     "typescript": "^5"

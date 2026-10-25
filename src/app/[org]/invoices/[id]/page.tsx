@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { getOrgContext, getSupabase } from "@/lib/session";
+import { getOrgContext, getSupabase, requireFeature } from "@/lib/session";
 import { addInvoiceItem, deleteDraftInvoice, deleteInvoiceItem, saveInvoiceDetails, setInvoiceStatus } from "@/lib/actions/invoices";
 import { ActionForm, ConfirmButton, SubmitButton } from "@/components/form";
 import { InvoiceDocument } from "@/components/invoice-document";
@@ -20,6 +20,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function InvoicePage({ params }: PageProps<"/[org]/invoices/[id]">) {
   const { org: slug, id } = await params;
   const ctx = await getOrgContext(slug);
+  requireFeature(ctx, "invoices");
   if (!ctx.can("invoice.manage")) redirect(`/${slug}`);
   const supabase = await getSupabase();
   const [{ data: inv }, { data: items }] = await Promise.all([

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getOrgContext, getSupabase } from "@/lib/session";
+import { getOrgContext, getSupabase, requireFeature } from "@/lib/session";
 import { InvoiceDocument } from "@/components/invoice-document";
 import { PrintButton } from "@/components/print-button";
 import type { Invoice, InvoiceItem } from "@/lib/types";
@@ -8,6 +8,7 @@ import type { Invoice, InvoiceItem } from "@/lib/types";
 export default async function PortalInvoice({ params }: PageProps<"/portal/[org]/invoices/[id]">) {
   const { org: slug, id } = await params;
   const ctx = await getOrgContext(slug);
+  requireFeature(ctx, "invoices");
   const supabase = await getSupabase();
   const [{ data: inv }, { data: items }] = await Promise.all([
     supabase.from("invoices").select("*, project:projects(key, name)").eq("id", id).eq("org_id", ctx.org.id).maybeSingle(),

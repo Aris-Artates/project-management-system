@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { getOrgContext, getSupabase } from "@/lib/session";
+import { getOrgContext, getSupabase, requireFeature } from "@/lib/session";
 import { createBlankInvoice, createInvoiceFromTime } from "@/lib/actions/invoices";
 import { ActionForm, SubmitButton } from "@/components/form";
 import { StatTile } from "@/components/charts";
@@ -16,6 +16,7 @@ export default async function InvoicesPage({ params, searchParams }: PageProps<"
   const { org: slug } = await params;
   const { status } = await searchParams;
   const ctx = await getOrgContext(slug);
+  requireFeature(ctx, "invoices");
   if (!ctx.can("invoice.manage")) redirect(`/${slug}`);
   const supabase = await getSupabase();
   let q = supabase.from("invoices").select("*, project:projects(key, name)").eq("org_id", ctx.org.id).order("created_at", { ascending: false });

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getProjectContext, displayName } from "@/lib/session";
+import { getProjectContext, displayName, requireFeature } from "@/lib/session";
 import { getBugs, getProjectMembers, getProjectWork } from "@/lib/queries";
 import { reportBug } from "@/lib/actions/bugs";
 import { BUG_STATUS, OPEN_BUG_STATUSES, REPRODUCIBILITY, SEVERITY } from "@/lib/bug-meta";
@@ -12,6 +12,7 @@ export default async function BugsPage({ params, searchParams }: PageProps<"/[or
   const { org: slug, key } = await params;
   const sp = await searchParams;
   const ctx = await getProjectContext(slug, key);
+  requireFeature(ctx, "bugs");
   const [bugs, members, { tasks }] = await Promise.all([
     getBugs(ctx.project.id),
     getProjectMembers(ctx.project.id, ctx.org.id),

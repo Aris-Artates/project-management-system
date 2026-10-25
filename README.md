@@ -1,4 +1,4 @@
-# project-management-system
+# Projectline
 
 Multi-organization project management: projects, tasks, boards, calendars, files and discussions, with roles each organization defines for itself and a separate portal for clients.
 
@@ -62,6 +62,26 @@ Emails (invitations, assignments, mentions, invoices) are sent through SMTP when
 - **Stripe** (optional): set the `STRIPE_*` variables and `SUPABASE_SERVICE_ROLE_KEY`, create a webhook in Stripe pointing to `/api/billing/webhook` with the events `checkout.session.completed`, `customer.subscription.updated` and `customer.subscription.deleted`. Without Stripe, platform admins set plans in the admin console.
 - **SSO**: register a SAML identity provider in Supabase (paid plan), then set the organization's SSO domain under Settings, Security.
 - **Two-factor authentication** works out of the box (authenticator apps). Organizations can require it under Settings, Security.
+
+## Tests
+
+Both suites run against a database with the demo seed loaded.
+
+```bash
+npm run test:db
+```
+
+Access-rule tests: each one signs in as a demo user inside a transaction that is rolled back, and checks what that person can see and change (organization isolation, client limits, permission-built roles, billing guards, API keys). Reads `SUPABASE_DB_URL` from the environment or `.env.local`.
+
+```bash
+npm run test:e2e
+```
+
+Browser smoke tests with Playwright, using your installed Chrome. Starts the dev server if it is not running. Set `E2E_BASE_URL` to test another deployment you control.
+
+## Dev tools
+
+Platform Devs can sign in as another user from Admin, People ("Sign in as", needs `SUPABASE_SERVICE_ROLE_KEY`; every use is in the audit log and a banner shows during the session), and switch modules off for everyone or single organizations under Admin, Features.
 
 ## Roadmap
 

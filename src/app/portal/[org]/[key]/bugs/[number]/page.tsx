@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getProjectContext } from "@/lib/session";
+import { getProjectContext, requireFeature } from "@/lib/session";
 import { getBug, getBugComments } from "@/lib/queries";
 import { BUG_STATUS, SEVERITY } from "@/lib/bug-meta";
 import { CommentThread } from "@/components/comments";
@@ -10,6 +10,7 @@ import { formatDate } from "@/lib/utils";
 export default async function PortalBug({ params }: PageProps<"/portal/[org]/[key]/bugs/[number]">) {
   const { org: slug, key, number } = await params;
   const ctx = await getProjectContext(slug, key);
+  requireFeature(ctx, "bugs");
   const bug = Number.isInteger(Number(number)) ? await getBug(ctx.project.id, Number(number)) : null;
   if (!bug) notFound();
   const comments = await getBugComments(ctx.project.id, bug.id);

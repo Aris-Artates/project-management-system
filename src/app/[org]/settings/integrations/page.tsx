@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getOrgContext, getSupabase } from "@/lib/session";
+import { getOrgContext, getSupabase, requireFeature } from "@/lib/session";
 import { connectGithub, createApiKey, createWebhook, deleteWebhook, disconnectGithub, revokeApiKey, toggleWebhook } from "@/lib/actions/admin-org";
 import { ActionForm, ConfirmButton, SubmitButton } from "@/components/form";
 import { Badge, Button, Card, CardHeader, Field, Input, Select } from "@/components/ui";
@@ -11,6 +11,7 @@ import { WEBHOOK_EVENTS } from "@/lib/webhook-events";
 export default async function IntegrationsPage({ params }: PageProps<"/[org]/settings/integrations">) {
   const { org: slug } = await params;
   const ctx = await getOrgContext(slug);
+  requireFeature(ctx, "integrations");
   if (!ctx.can("integration.manage")) redirect(`/${slug}/settings`);
   const supabase = await getSupabase();
   const [{ data: keys }, { data: hooks }, { data: github }, { data: projects }] = await Promise.all([

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getOrgContext, getSupabase, displayName } from "@/lib/session";
+import { getOrgContext, getSupabase, displayName, requireFeature } from "@/lib/session";
 import { saveInvoicingSettings, saveMemberRate } from "@/lib/actions/admin-org";
 import { ActionForm, SubmitButton } from "@/components/form";
 import { Avatar, Button, Card, CardHeader, Field, Input, Textarea } from "@/components/ui";
@@ -7,6 +7,7 @@ import { Avatar, Button, Card, CardHeader, Field, Input, Textarea } from "@/comp
 export default async function InvoicingSettings({ params }: PageProps<"/[org]/settings/invoicing">) {
   const { org: slug } = await params;
   const ctx = await getOrgContext(slug);
+  requireFeature(ctx, "invoices");
   if (!ctx.can("invoice.manage")) redirect(`/${slug}/settings`);
   const supabase = await getSupabase();
   const [{ data: members }, { data: rates }] = await Promise.all([

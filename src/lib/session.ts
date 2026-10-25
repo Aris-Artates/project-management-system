@@ -39,6 +39,14 @@ export async function requireProfile(next?: string): Promise<Profile> {
   return profile;
 }
 
+export type Feature = "chat" | "docs" | "bugs" | "time" | "invoices" | "automation" | "integrations";
+
+const getFlags = cache(async () => {
+  const supabase = await getSupabase();
+  const { data } = await supabase.from("feature_flags").select("key, enabled, disabled_orgs");
+  return (data ?? []) as { key: string; enabled: boolean; disabled_orgs: string[] }[];
+});
+
 export type OrgContext = {
   profile: Profile;
   org: Organization;
@@ -47,7 +55,13 @@ export type OrgContext = {
   isOrgAdmin: boolean;
   isClient: boolean;
   can: (perm: Permission) => boolean;
+  feature: (key: Feature) => boolean;
 };
+
+// 404 for pages of a module that is switched off for this organization.
+export function requireFeature(ctx: OrgContext, key: Feature) {
+  if (!ctx.feature(key)) notFound();
+}
 
 export const getOrgContext = cache(async (slug: string): Promise<OrgContext> => {
   const profile = await requireProfile(`/${slug}`);
@@ -77,6 +91,11 @@ export const getOrgContext = cache(async (slug: string): Promise<OrgContext> => 
   const isOrgAdmin = isPlatformAdmin || role?.system_key === "org_admin";
   const isClient = !isPlatformAdmin && role?.system_key === "client";
   const perms = new Set(role?.permissions ?? []);
+  const flags = await getFlags();
+  const feature = (key: Feature) => {
+    const f = flags.find((x) => x.key === key);
+    return !f || (f.enabled && !f.disabled_orgs.includes(org.id));
+  };
 
   return {
     profile,
@@ -86,6 +105,7 @@ export const getOrgContext = cache(async (slug: string): Promise<OrgContext> => 
     isOrgAdmin,
     isClient,
     can: (perm) => isOrgAdmin || perms.has(perm),
+    feature,
   };
 });
 

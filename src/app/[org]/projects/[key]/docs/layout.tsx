@@ -1,4 +1,4 @@
-import { getProjectContext } from "@/lib/session";
+import { getProjectContext, requireFeature } from "@/lib/session";
 import { getDocs } from "@/lib/queries";
 import { createDoc } from "@/lib/actions/docs";
 import { ActionForm, SubmitButton } from "@/components/form";
@@ -8,6 +8,7 @@ import { Card, Input } from "@/components/ui";
 export default async function DocsLayout({ children, params }: LayoutProps<"/[org]/projects/[key]/docs">) {
   const { org: slug, key } = await params;
   const ctx = await getProjectContext(slug, key);
+  requireFeature(ctx, "docs");
   const docs = await getDocs(ctx.project.id);
   const base = `/${slug}/projects/${ctx.project.key}/docs`;
 

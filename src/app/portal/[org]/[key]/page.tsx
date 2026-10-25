@@ -191,6 +191,7 @@ export default async function PortalProject({ params }: PageProps<"/portal/[org]
         </Card>
       </div>
 
+      {ctx.feature("bugs") && (
       <Card>
         <CardHeader title="Reported issues" />
         {bugs.length === 0 ? (
@@ -229,6 +230,7 @@ export default async function PortalProject({ params }: PageProps<"/portal/[org]
           </ActionForm>
         )}
       </Card>
+      )}
 
       <Card>
         <CardHeader

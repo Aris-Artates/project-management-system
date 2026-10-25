@@ -1,10 +1,11 @@
-import { getProjectContext, displayName } from "@/lib/session";
+import { getProjectContext, displayName, requireFeature } from "@/lib/session";
 import { getChat, getProjectMembers } from "@/lib/queries";
 import { ProjectChat } from "@/components/project-chat";
 
 export default async function ChatPage({ params }: PageProps<"/[org]/projects/[key]/chat">) {
   const { org: slug, key } = await params;
   const ctx = await getProjectContext(slug, key);
+  requireFeature(ctx, "chat");
   const [messages, members] = await Promise.all([getChat(ctx.project.id), getProjectMembers(ctx.project.id, ctx.org.id)]);
   const people = Object.fromEntries(
     [...members.map((m) => m.profile), ...messages.flatMap((m) => (m.author ? [m.author] : []))].map((p) => [

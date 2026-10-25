@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { getOrgContext, getSupabase, displayName } from "@/lib/session";
+import { getOrgContext, getSupabase, displayName, requireFeature } from "@/lib/session";
 import { Avatar, Card, EmptyState, PageHeader } from "@/components/ui";
 import { formatMinutes } from "@/components/time-log";
 import { cn, todayISO } from "@/lib/utils";
@@ -25,6 +25,7 @@ export default async function WorkloadPage({ params, searchParams }: PageProps<"
   const { org: slug } = await params;
   const { capacity } = await searchParams;
   const ctx = await getOrgContext(slug);
+  requireFeature(ctx, "time");
   const supabase = await getSupabase();
   const weekly = Math.min(80, Math.max(1, Number(capacity) || 40));
   const starts = Array.from({ length: WEEKS + 1 }, (_, i) => mondayISO(i));

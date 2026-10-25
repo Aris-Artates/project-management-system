@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { getOrgContext, displayName } from "@/lib/session";
+import { getOrgContext, displayName, requireFeature } from "@/lib/session";
 import { getMyTimer, getTimeEntries } from "@/lib/queries";
 import { approveTime, rejectTime, stopTimer, submitWeek } from "@/lib/actions/time";
 import { ActionForm, SubmitButton } from "@/components/form";
@@ -29,6 +29,7 @@ export default async function TimesheetPage({ params, searchParams }: PageProps<
   const { org: slug } = await params;
   const sp = await searchParams;
   const ctx = await getOrgContext(slug);
+  requireFeature(ctx, "time");
   const week = mondayOf(typeof sp.week === "string" && /^\d{4}-\d{2}-\d{2}$/.test(sp.week) ? sp.week : todayISO());
   const days = Array.from({ length: 7 }, (_, i) => addDays(week, i));
   const from = iso(days[0]!);

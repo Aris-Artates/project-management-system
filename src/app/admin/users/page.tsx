@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { getSupabase, requireProfile, displayName } from "@/lib/session";
 import { adminSetPlatformRole } from "@/lib/actions/admin";
-import { ActionForm, AutoSubmitSelect } from "@/components/form";
+import { ActionForm, AutoSubmitSelect, SubmitButton } from "@/components/form";
+import { startImpersonation } from "@/lib/actions/dev";
 import { Avatar, Badge, Card, Input, PageHeader } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
 
@@ -43,6 +44,14 @@ export default async function AdminUsers({ searchParams }: PageProps<"/admin/use
                 </p>
                 {orgsByUser.get(p.id) && <p className="truncate text-xs text-muted">{orgsByUser.get(p.id)!.join(", ")}</p>}
               </div>
+              {isDev && p.id !== me.id && p.platform_role !== "dev" && (
+                <ActionForm action={startImpersonation} showOk={false}>
+                  <input type="hidden" name="user_id" value={p.id} />
+                  <SubmitButton size="sm" variant="ghost" pendingText="Switching...">
+                    Sign in as
+                  </SubmitButton>
+                </ActionForm>
+              )}
               {isDev && p.id !== me.id ? (
                 <ActionForm action={adminSetPlatformRole} showOk={false}>
                   <input type="hidden" name="user_id" value={p.id} />

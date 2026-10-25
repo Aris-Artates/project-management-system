@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getOrgContext, getSupabase, displayName } from "@/lib/session";
+import { getOrgContext, getSupabase, displayName, requireFeature } from "@/lib/session";
 import { deleteAutomationRule, toggleAutomationRule } from "@/lib/actions/admin-org";
 import { RuleBuilder } from "@/components/rule-builder";
 import { ConfirmButton } from "@/components/form";
@@ -19,6 +19,7 @@ export default async function AutomationPage({ params, searchParams }: PageProps
   const { org: slug } = await params;
   const { edit } = await searchParams;
   const ctx = await getOrgContext(slug);
+  requireFeature(ctx, "automation");
   if (!ctx.can("automation.manage")) redirect(`/${slug}/settings`);
   const supabase = await getSupabase();
   const [{ data: rules }, { data: projects }, { data: members }, { data: runs }] = await Promise.all([

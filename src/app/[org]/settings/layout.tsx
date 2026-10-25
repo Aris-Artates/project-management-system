@@ -7,7 +7,7 @@ import { settingsTabs } from "@/lib/settings-tabs";
 export default async function SettingsLayout({ children, params }: LayoutProps<"/[org]/settings">) {
   const { org: slug } = await params;
   const ctx = await getOrgContext(slug);
-  const tabs = settingsTabs(slug, ctx.can);
+  const tabs = settingsTabs(slug, ctx.can, ctx.feature);
   if (!tabs.length) redirect(`/${slug}`);
 
   return (
